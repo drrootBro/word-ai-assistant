@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>BYOK AI Assistant</title>
+<script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+<script src="config.js"></script>
+<script src="taskpane.js"></script>
+<style>
+body { font-family: sans-serif; padding: 12px; }
+textarea { width: 100%; min-height: 80px; }
+select, input { width: 100%; margin-bottom: 8px; padding: 6px; }
+.btn-row { margin-top: 10px; display: flex; gap: 8px; }
+button.primary { background: #1a73e8; color: white; }
+</style>
+</head>
+<body>
+<h2>BYOK AI Assistant</h2>
+<label>API Provider</label>
+<select id="provider">
+<option value="gemini">Gemini</option>
+<option value="openai">OpenAI</option>
+</select>
+
+
+<label>API Key</label>
+<input type="password" id="apiKey" placeholder="Enter API Key" />
+
+
+<label>Mode</label>
+<select id="mode">
+<option value="generate">Generate</option>
+<option value="rewrite">Rewrite Selection</option>
+<option value="summarize">Summarize Selection</option>
+<option value="expand">Expand Selection</option>
+<option value="format">Format Selection</option>
+<option value="translate_en_zh">EN → ZH</option>
+<option value="translate_zh_en">ZH → EN</option>
+</select>
+
+
+<label>Prompt</label>
+<textarea id="prompt"></textarea>
+
+
+<div class="btn-row">
+<button id="btnUseSelection">Load Selection</button>
+<button id="btnGenerate" class="primary">Generate & Insert</button>
+</div>
+
+
+<div id="status"></div>
+</body>
+</html>
