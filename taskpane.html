@@ -199,6 +199,8 @@
   </div>
 
   <script>
+    console.log("Script started");
+
     // ✅ 替换成你的 Apps Script Web App URL（/exec 结尾）
     const CONFIG = {
       API_ENDPOINT: "https://script.google.com/macros/s/AKfycbyj0C_rLQrGugpil_2UrTaRbkxb-71id0L_amEUAaeZo0K3hKvOQRJ8doMRrv3LuKsU/exec"
@@ -220,6 +222,7 @@
       el.textContent = message;
       el.className = "status " + (type || "");
       el.style.display = "block";
+      console.log("Status:", elementId, type, message);
     }
 
     function clearStatus(elementId) {
@@ -259,6 +262,7 @@
         linkEl.textContent = "👉 Get OpenAI API key";
         linkEl.href = "https://platform.openai.com/api-keys";
       }
+      console.log("Updated labels for provider:", provider);
     }
 
     function loadSavedApiKey() {
@@ -267,9 +271,11 @@
       if (input) {
         input.value = key || "";
       }
+      console.log("Loaded API key:", !!key);
     }
 
     function saveApiKey() {
+      console.log("Save button clicked");
       const input = document.getElementById("apiKeyInput");
       if (!input) return;
       const value = input.value.trim();
@@ -307,12 +313,16 @@
 
     // ✅ 统一调用你的 Apps Script 后端（和 Docs 一致）
     async function callBackend(mode, prompt, selectionText) {
+      console.log("Calling backend:", mode);
+      
       if (!CONFIG.API_ENDPOINT) {
         throw new Error("API endpoint is not configured.");
       }
 
       const provider = getProvider();
       const apiKey = localStorage.getItem(getStorageKeyForProvider()) || "";
+
+      console.log("Provider:", provider, "Has key:", !!apiKey);
 
       if (!apiKey) {
         throw new Error("Please save your API key first.");
@@ -321,10 +331,12 @@
       const body = {
         provider: provider,
         apiKey: apiKey,
-        mode: mode,                 // "generate" / "rewrite" / "summarize" / "expand" / "format"
+        mode: mode,
         prompt: prompt || "",
         selectionText: selectionText || ""
       };
+
+      console.log("Sending request to:", CONFIG.API_ENDPOINT);
 
       const res = await fetch(CONFIG.API_ENDPOINT, {
         method: "POST",
@@ -332,12 +344,16 @@
         body: JSON.stringify(body)
       });
 
+      console.log("Response status:", res.status);
+
       if (!res.ok) {
         const text = await res.text();
         throw new Error("Request failed: " + res.status + " - " + text);
       }
 
       const data = await res.json();
+      console.log("Response data:", data);
+      
       if (!data || !data.success) {
         throw new Error((data && data.error) || "Unknown error from backend");
       }
@@ -345,8 +361,12 @@
     }
 
     async function handleGenerate() {
+      console.log("Generate button clicked!");
       clearStatus("generateStatus");
       const prompt = document.getElementById("promptInput").value.trim();
+      
+      console.log("Prompt:", prompt);
+      
       if (!prompt) {
         showStatus("generateStatus", "Please enter a prompt.", "error");
         return;
@@ -356,6 +376,8 @@
         setBusy(true);
         showStatus("generateStatus", "Calling AI...", "success");
         const output = await callBackend("generate", prompt, "");
+        console.log("Got output, length:", output.length);
+        
         if (!output) {
           showStatus("generateStatus", "AI returned empty result.", "error");
           return;
@@ -363,7 +385,7 @@
         await insertOrReplaceText(output);
         showStatus("generateStatus", "Inserted successfully.", "success");
       } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
         showStatus("generateStatus", "Error: " + (err.message || String(err)), "error");
       } finally {
         setBusy(false);
@@ -371,10 +393,13 @@
     }
 
     async function handleEdit(mode) {
+      console.log("Edit button clicked:", mode);
       clearStatus("editStatus");
       try {
         setBusy(true);
         const selectionText = await getSelectionText();
+        console.log("Selection text length:", selectionText.length);
+        
         if (!selectionText) {
           showStatus("editStatus", "Please select some text first.", "error");
           return;
@@ -394,49 +419,66 @@
 
         showStatus("editStatus", "Selection updated.", "success");
       } catch (err) {
-        console.error(err);
+        console.error("Error:", err);
         showStatus("editStatus", "Error: " + (err.message || String(err)), "error");
       } finally {
         setBusy(false);
       }
     }
 
+    // ✅ 修复：直接在 Office.onReady 里绑定事件，不要等待 DOMContentLoaded！
     Office.onReady((info) => {
+      console.log("Office.onReady called", info);
+      
       if (info.host === Office.HostType.Word) {
-        document.addEventListener("DOMContentLoaded", () => {
-          // provider 变化时更新 label + link + key
-          const providerSelect = document.getElementById("providerSelect");
-          if (providerSelect) {
-            providerSelect.addEventListener("change", () => {
-              updateApiKeyLabelAndLink();
-              loadSavedApiKey();
-              clearStatus("saveStatus");
-            });
-          }
+        console.log("Host is Word, binding events...");
+        
+        // provider 变化时更新 label + link + key
+        const providerSelect = document.getElementById("providerSelect");
+        if (providerSelect) {
+          providerSelect.addEventListener("change", () => {
+            console.log("Provider changed");
+            updateApiKeyLabelAndLink();
+            loadSavedApiKey();
+            clearStatus("saveStatus");
+          });
+        }
 
-          // 绑定按钮
-          const saveBtn = document.getElementById("saveKeyBtn");
-          if (saveBtn) saveBtn.onclick = saveApiKey;
+        // 绑定按钮
+        const saveBtn = document.getElementById("saveKeyBtn");
+        if (saveBtn) {
+          saveBtn.onclick = saveApiKey;
+          console.log("Save button bound");
+        }
 
-          const genBtn = document.getElementById("generateBtn");
-          if (genBtn) genBtn.onclick = handleGenerate;
+        const genBtn = document.getElementById("generateBtn");
+        if (genBtn) {
+          genBtn.onclick = handleGenerate;
+          console.log("Generate button bound");
+        }
 
-          const btnRewrite = document.getElementById("btnRewrite");
-          const btnSummarize = document.getElementById("btnSummarize");
-          const btnExpand = document.getElementById("btnExpand");
-          const btnFormat = document.getElementById("btnFormat");
+        const btnRewrite = document.getElementById("btnRewrite");
+        const btnSummarize = document.getElementById("btnSummarize");
+        const btnExpand = document.getElementById("btnExpand");
+        const btnFormat = document.getElementById("btnFormat");
 
-          if (btnRewrite) btnRewrite.onclick = () => handleEdit("rewrite");
-          if (btnSummarize) btnSummarize.onclick = () => handleEdit("summarize");
-          if (btnExpand)   btnExpand.onclick   = () => handleEdit("expand");
-          if (btnFormat)   btnFormat.onclick   = () => handleEdit("format");
+        if (btnRewrite) btnRewrite.onclick = () => handleEdit("rewrite");
+        if (btnSummarize) btnSummarize.onclick = () => handleEdit("summarize");
+        if (btnExpand)   btnExpand.onclick   = () => handleEdit("expand");
+        if (btnFormat)   btnFormat.onclick   = () => handleEdit("format");
 
-          // 初始化
-          updateApiKeyLabelAndLink();
-          loadSavedApiKey();
-        });
+        console.log("Edit buttons bound");
+
+        // 初始化
+        updateApiKeyLabelAndLink();
+        loadSavedApiKey();
+        
+        console.log("Initialization complete");
       }
     });
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>
