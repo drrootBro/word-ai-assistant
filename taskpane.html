@@ -1,61 +1,363 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Word AI Assistant</title>
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <script src="config.js"></script>
-  <script src="taskpane.js"></script>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI; padding: 14px; }
-    .section { margin-top: 12px; }
-    label { font-weight: 600; }
-    select, input, textarea { width: 100%; padding: 6px; margin-top: 4px; }
-    textarea { height: 90px; }
-    button { padding: 8px 12px; margin-right: 6px; }
-    .primary { background:#1a73e8; color:white; border:none; }
-    #status { font-size:12px; color:#666; margin-top:10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYOK AI Assistant</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        select, input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        
+        select {
+            background: white;
+            cursor: pointer;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #1976D2;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .link {
+            color: #2196F3;
+            text-decoration: none;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .status {
+            font-size: 12px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+    </style>
 </head>
-
 <body>
-  <h2>Word AI Assistant</h2>
+    <h1>AI Writing Assistant</h1>
+    
+    <!-- Model Selection -->
+    <div class="section">
+        <select id="modelSelect">
+            <option value="gemini">Google Gemini (Free)</option>
+            <option value="openai">OpenAI GPT-4</option>
+            <option value="claude">Anthropic Claude</option>
+            <option value="openrouter">OpenRouter</option>
+        </select>
+        
+        <div class="section-title">🔑 <span id="apiKeyLabel">Gemini API Key</span></div>
+        <input type="password" id="apiKeyInput" placeholder="Enter your API key...">
+        <button class="btn-secondary" onclick="saveApiKey()">💾 Save Key</button>
+        <a href="#" class="link" id="getKeyLink" onclick="openApiKeyPage(event)">👉 Get free API key</a>
+        
+        <div id="saveStatus" class="status"></div>
+    </div>
+    
+    <!-- Generate Content -->
+    <div class="section">
+        <div class="section-title">✨ Generate Content</div>
+        <div class="info-text">📍 Inserts at cursor position</div>
+        <textarea id="promptInput" placeholder="e.g., Write an article about AI..."></textarea>
+        <button class="btn-primary" onclick="generateContent()">✨ Generate & Insert</button>
+    </div>
+    
+    <!-- Edit Selection -->
+    <div class="section">
+        <div class="section-title">📝 Edit Selection</div>
+        <div class="info-text">✨ Highlight text first</div>
+        <div class="btn-grid">
+            <button class="btn-secondary" onclick="editText('rewrite')">✍️ Rewrite</button>
+            <button class="btn-secondary" onclick="editText('summarize')">📄 Summarize</button>
+            <button class="btn-secondary" onclick="editText('expand')">📈 Expand</button>
+            <button class="btn-secondary" onclick="editText('format')">✨ Format</button>
+        </div>
+    </div>
 
-  <div class="section">
-    <label>Provider</label>
-    <select id="provider">
-      <option value="gemini">Google Gemini</option>
-      <option value="openai">OpenAI GPT</option>
-    </select>
-  </div>
-
-  <div class="section">
-    <label>API Key</label>
-    <input id="apiKey" type="password" placeholder="Paste your API key" />
-  </div>
-
-  <div class="section">
-    <label>Mode</label>
-    <select id="mode">
-      <option value="generate">Generate</option>
-      <option value="rewrite">Rewrite Selection</option>
-      <option value="summarize">Summarize Selection</option>
-      <option value="expand">Expand</option>
-      <option value="translate_en_zh">EN → ZH</option>
-      <option value="translate_zh_en">ZH → EN</option>
-    </select>
-  </div>
-
-  <div class="section">
-    <label>Prompt</label>
-    <textarea id="prompt"></textarea>
-  </div>
-
-  <div class="section">
-    <button id="btnUseSelection">Load Selection</button>
-    <button id="btnGenerate" class="primary">Generate</button>
-  </div>
-
-  <div id="status"></div>
+    <script>
+        // Office.js initialization
+        Office.onReady((info) => {
+            console.log('Office Add-in ready');
+            loadSavedApiKey();
+            updateApiKeyLabel();
+        });
+        
+        // Model configuration
+        const modelConfig = {
+            gemini: {
+                name: 'Gemini API Key',
+                link: 'https://aistudio.google.com/app/apikey',
+                endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+            },
+            openai: {
+                name: 'OpenAI API Key',
+                link: 'https://platform.openai.com/api-keys',
+                endpoint: 'https://api.openai.com/v1/chat/completions'
+            },
+            claude: {
+                name: 'Anthropic API Key',
+                link: 'https://console.anthropic.com/',
+                endpoint: 'https://api.anthropic.com/v1/messages'
+            },
+            openrouter: {
+                name: 'OpenRouter API Key',
+                link: 'https://openrouter.ai/keys',
+                endpoint: 'https://openrouter.ai/api/v1/chat/completions'
+            }
+        };
+        
+        // Update API key label and link based on selected model
+        document.getElementById('modelSelect').addEventListener('change', updateApiKeyLabel);
+        
+        function updateApiKeyLabel() {
+            const model = document.getElementById('modelSelect').value;
+            const config = modelConfig[model];
+            document.getElementById('apiKeyLabel').textContent = config.name;
+            document.getElementById('getKeyLink').href = config.link;
+        }
+        
+        function openApiKeyPage(e) {
+            e.preventDefault();
+            const model = document.getElementById('modelSelect').value;
+            window.open(modelConfig[model].link, '_blank');
+        }
+        
+        // Save API key to localStorage
+        function saveApiKey() {
+            const model = document.getElementById('modelSelect').value;
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            
+            if (!apiKey) {
+                showStatus('Please enter an API key', 'error');
+                return;
+            }
+            
+            localStorage.setItem(`apiKey_${model}`, apiKey);
+            showStatus('API key saved successfully!', 'success');
+        }
+        
+        // Load saved API key
+        function loadSavedApiKey() {
+            const model = document.getElementById('modelSelect').value;
+            const savedKey = localStorage.getItem(`apiKey_${model}`);
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+            } else {
+                document.getElementById('apiKeyInput').value = '';
+            }
+        }
+        
+        document.getElementById('modelSelect').addEventListener('change', loadSavedApiKey);
+        
+        // Show status message
+        function showStatus(message, type) {
+            const status = document.getElementById('saveStatus');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Generate content
+        async function generateContent() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+            
+            const model = document.getElementById('modelSelect').value;
+            const apiKey = localStorage.getItem(`apiKey_${model}`);
+            
+            if (!apiKey) {
+                alert('Please save your API key first');
+                return;
+            }
+            
+            try {
+                const response = await callAI(model, apiKey, prompt);
+                await insertText(response);
+                document.getElementById('promptInput').value = '';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Edit selected text
+        async function editText(action) {
+            const model = document.getElementById('modelSelect').value;
+            const apiKey = localStorage.getItem(`apiKey_${model}`);
+            
+            if (!apiKey) {
+                alert('Please save your API key first');
+                return;
+            }
+            
+            try {
+                await Word.run(async (context) => {
+                    const selection = context.document.getSelection();
+                    selection.load('text');
+                    await context.sync();
+                    
+                    const selectedText = selection.text;
+                    if (!selectedText) {
+                        alert('Please select some text first');
+                        return;
+                    }
+                    
+                    const prompts = {
+                        rewrite: `Rewrite this text to make it clearer and more professional:\n\n${selectedText}`,
+                        summarize: `Summarize this text concisely:\n\n${selectedText}`,
+                        expand: `Expand on this text with more details:\n\n${selectedText}`,
+                        format: `Improve the formatting and structure of this text:\n\n${selectedText}`
+                    };
+                    
+                    const response = await callAI(model, apiKey, prompts[action]);
+                    selection.insertText(response, Word.InsertLocation.replace);
+                    await context.sync();
+                });
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+        
+        // Call AI API
+        async function callAI(model, apiKey, prompt) {
+            const config = modelConfig[model];
+            
+            if (model === 'gemini') {
+                const response = await fetch(`${config.endpoint}?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || 'API Error');
+                return data.candidates[0].content.parts[0].text;
+            }
+            
+            // Add other models here (OpenAI, Claude, etc.)
+            throw new Error('Model not yet implemented');
+        }
+        
+        // Insert text at cursor
+        async function insertText(text) {
+            await Word.run(async (context) => {
+                const selection = context.document.getSelection();
+                selection.insertText(text, Word.InsertLocation.end);
+                await context.sync();
+            });
+        }
+    </script>
 </body>
 </html>
