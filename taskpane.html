@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BYOK AI Assistant</title>
-
-    <!-- Office.js -->
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
             background: #f5f5f5;
             padding: 20px;
         }
+
         h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             color: #333;
         }
 
@@ -26,29 +26,23 @@
             background: white;
             border-radius: 12px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            margin-bottom: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+
         .section-title {
             font-size: 14px;
             font-weight: 600;
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        select, input, textarea {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 1px solid #ddd;
             border-radius: 8px;
             font-size: 14px;
             margin-bottom: 12px;
-        }
-        textarea {
-            resize: vertical;
-            min-height: 80px;
         }
 
         button {
@@ -58,83 +52,58 @@
             border-radius: 8px;
             font-size: 14px;
             cursor: pointer;
-            font-weight: 500;
         }
 
-        .btn-primary {
-            background: #1a73e8;
-            color: white;
-        }
-        .btn-primary:hover:not(:disabled) {
-            background: #1558c0;
-        }
-        .btn-secondary {
-            background: #f1f3f4;
-            color: #444;
-        }
-        .btn-secondary:hover:not(:disabled) {
-            background: #e3e5e6;
-        }
+        .btn-primary { background: #0078D4; color: white; }
+        .btn-secondary { background: #efefef; color: #333; }
 
-        .btn-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .info-text {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 12px;
-        }
+        .info-text { font-size: 12px; color: #666; margin-bottom: 8px; }
 
         .status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 8px;
             font-size: 12px;
+            padding: 8px;
+            border-radius: 6px;
+            margin-top: 8px;
             display: none;
         }
-        .success {
-            background: #e6f4ea;
-            color: #137333;
-            display: block;
-        }
-        .error {
-            background: #fce8e6;
-            color: #c5221f;
-            display: block;
-        }
 
-        .loading {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin .6s linear infinite;
+        .status.success { background: #e8f5e9; color: #2e7d32; display: block; }
+        .status.error   { background: #ffebee; color: #c62828; display: block; }
+
+        /* Account & Trial highlight */
+        #accountSection {
+            border-left: 4px solid #0078D4;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
+
     <h1>AI Writing Assistant</h1>
+
+    <!-- STEP 1 — Email + Trial -->
+    <div class="section" id="accountSection">
+        <div class="section-title">👤 Account & Trial</div>
+
+        <input type="email" id="userEmailInput" placeholder="Enter your email (used for license)…">
+        <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
+
+        <div class="info-text" id="emailDisplay">Not saved yet.</div>
+
+        <div class="status" id="trialStatus"></div>
+    </div>
 
     <!-- Model Selection -->
     <div class="section">
         <select id="modelSelect">
             <option value="gemini">Google Gemini (Free)</option>
-            <option value="openai">OpenAI GPT-4o Mini</option>
+            <option value="openai">OpenAI GPT-4</option>
             <option value="claude">Anthropic Claude</option>
         </select>
 
         <div class="section-title">🔑 <span id="apiKeyLabel">Gemini API Key</span></div>
-        <input type="password" id="apiKeyInput" placeholder="Enter your API key..." />
-
+        <input type="password" id="apiKeyInput" placeholder="Enter your API key...">
         <button class="btn-secondary" id="saveApiKeyBtn">💾 Save Key</button>
-        <a id="getKeyLink" href="#" target="_blank" style="font-size:13px; color:#1a73e8;">👉 Get free API key</a>
 
         <div id="saveStatus" class="status"></div>
     </div>
@@ -142,280 +111,296 @@
     <!-- Generate Content -->
     <div class="section">
         <div class="section-title">✨ Generate Content</div>
-        <div class="info-text">📍 Inserts at cursor position</div>
-
-        <textarea id="promptInput" placeholder="e.g., Write an introduction about AI and productivity..."></textarea>
-
+        <textarea id="promptInput" placeholder="Write an article about AI..."></textarea>
         <button class="btn-primary" id="generateBtn">✨ Generate & Insert</button>
-
         <div id="generateStatus" class="status"></div>
     </div>
 
-    <!-- Edit Section (Google Docs Add-on style) -->
+    <!-- Edit Selection -->
     <div class="section">
         <div class="section-title">📝 Edit Selection</div>
-        <div class="info-text">✨ Highlight text first</div>
-
-        <div class="btn-grid">
-            <button class="btn-secondary" data-action="rewrite">✍️ Rewrite</button>
-            <button class="btn-secondary" data-action="summarize">📄 Summarize</button>
-            <button class="btn-secondary" data-action="expand">📈 Expand</button>
-            <button class="btn-secondary" data-action="format">✨ Format</button>
-        </div>
-
-        <textarea id="customInstruction" placeholder="Or enter custom instruction..."></textarea>
-
-        <button class="btn-primary" id="runCustomBtn">🚀 Run on Selected</button>
-
+        <button class="btn-secondary" onclick="editText('rewrite')">✍️ Rewrite</button>
+        <button class="btn-secondary" onclick="editText('summarize')">📄 Summarize</button>
+        <button class="btn-secondary" onclick="editText('expand')">📈 Expand</button>
+        <button class="btn-secondary" onclick="editText('format')">✨ Format</button>
         <div id="editStatus" class="status"></div>
     </div>
 
-    <script>
-        /***********************************************
-         * MODEL CONFIG
-         ***********************************************/
-        const modelConfig = {
-            gemini: {
-                name: "Gemini API Key",
-                link: "https://aistudio.google.com/app/apikey",
-                endpoint:
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-            },
-            openai: {
-                name: "OpenAI API Key",
-                link: "https://platform.openai.com/api-keys",
-                endpoint: "https://api.openai.com/v1/chat/completions",
-                model: "gpt-4o-mini"
-            },
-            claude: {
-                name: "Anthropic API Key",
-                link: "https://console.anthropic.com/",
-                endpoint: "https://api.anthropic.com/v1/messages",
-                model: "claude-3-5-sonnet-20241022"
-            }
+<script>
+
+/*************************************************************
+ * Office Initialization
+ *************************************************************/
+Office.onReady(() => {
+    console.log("Office ready.");
+
+    document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
+    document.getElementById("generateBtn").addEventListener("click", generateContent);
+
+    document.getElementById("modelSelect").addEventListener("change", updateApiKeyLabel);
+
+    initUserEmailAndTrial();
+    updateApiKeyLabel();
+});
+
+/*************************************************************
+ * Step 1 — Email + Trial Logic
+ *************************************************************/
+const TRIAL_DAYS = 5;
+
+function initUserEmailAndTrial() {
+    const emailInput = document.getElementById("userEmailInput");
+    const saveEmailBtn = document.getElementById("saveEmailBtn");
+
+    saveEmailBtn.addEventListener("click", saveUserEmail);
+
+    // Initialize email
+    const savedEmail = localStorage.getItem("byok_user_email");
+    if (savedEmail) {
+        emailInput.value = savedEmail;
+        updateEmailDisplay(savedEmail);
+    }
+
+    // Initialize trial start time
+    let start = localStorage.getItem("byok_trial_start");
+    if (!start) {
+        start = Date.now().toString();
+        localStorage.setItem("byok_trial_start", start);
+    }
+
+    updateTrialStatus();
+}
+
+function saveUserEmail() {
+    const emailInput = document.getElementById("userEmailInput");
+    const email = emailInput.value.trim();
+    if (!email || !email.includes("@")) {
+        showStatus("trialStatus", "⚠️ Please enter a valid email", "error");
+        return;
+    }
+    localStorage.setItem("byok_user_email", email);
+    updateEmailDisplay(email);
+    showStatus("trialStatus", "✅ Email saved", "success");
+}
+
+function updateEmailDisplay(email) {
+    document.getElementById("emailDisplay").textContent = `Using email: ${email}`;
+}
+
+function updateTrialStatus() {
+    const statusEl = document.getElementById("trialStatus");
+    const start = Number(localStorage.getItem("byok_trial_start") || Date.now());
+    const now = Date.now();
+
+    const daysUsed = Math.floor((now - start) / (24 * 3600 * 1000));
+    const daysLeft = TRIAL_DAYS - daysUsed;
+
+    if (daysLeft > 0) {
+        statusEl.className = "status success";
+        statusEl.style.display = "block";
+        statusEl.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
+    } else {
+        statusEl.className = "status error";
+        statusEl.style.display = "block";
+        statusEl.textContent = "🔴 Free trial ended – upgrade required (payment later)";
+    }
+}
+
+/*************************************************************
+ * Model Config (Gemini MUST use 2.0-flash)
+ *************************************************************/
+const modelConfig = {
+    gemini: {
+        name: "Gemini API Key",
+        link: "https://aistudio.google.com/app/apikey",
+        endpoint:
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    },
+    openai: {
+        name: "OpenAI API Key",
+        link: "https://platform.openai.com/api-keys",
+        endpoint: "https://api.openai.com/v1/chat/completions"
+    },
+    claude: {
+        name: "Anthropic API Key",
+        link: "https://console.anthropic.com/",
+        endpoint: "https://api.anthropic.com/v1/messages"
+    }
+};
+
+function updateApiKeyLabel() {
+    const model = document.getElementById("modelSelect").value;
+    const cfg = modelConfig[model];
+    document.getElementById("apiKeyLabel").textContent = cfg.name;
+
+    const saved = localStorage.getItem(`apiKey_${model}`);
+    document.getElementById("apiKeyInput").value = saved || "";
+}
+
+function saveApiKey() {
+    const model = document.getElementById("modelSelect").value;
+    const key = document.getElementById("apiKeyInput").value.trim();
+
+    if (!key) {
+        showStatus("saveStatus", "⚠️ Please enter an API key", "error");
+        return;
+    }
+
+    localStorage.setItem(`apiKey_${model}`, key);
+    showStatus("saveStatus", "API key saved! ✅", "success");
+}
+
+/*************************************************************
+ * Generate Content (with Gemini 2.0 Flash)
+ *************************************************************/
+async function generateContent() {
+    const prompt = document.getElementById("promptInput").value.trim();
+    if (!prompt) {
+        showStatus("generateStatus", "⚠️ Please enter a prompt", "error");
+        return;
+    }
+
+    const model = document.getElementById("modelSelect").value;
+    const apiKey = localStorage.getItem(`apiKey_${model}`);
+    if (!apiKey) {
+        showStatus("generateStatus", "⚠️ Save your API key first", "error");
+        return;
+    }
+
+    try {
+        const result = await callAI(model, apiKey, prompt);
+        await insertText(result);
+        showStatus("generateStatus", "Inserted successfully! 🎉", "success");
+    } catch (err) {
+        showStatus("generateStatus", "❌ " + err.message, "error");
+    }
+}
+
+async function editText(action) {
+    const model = document.getElementById("modelSelect").value;
+    const apiKey = localStorage.getItem(`apiKey_${model}`);
+
+    if (!apiKey) {
+        showStatus("editStatus", "⚠️ Save your API key first", "error");
+        return;
+    }
+
+    await Word.run(async (context) => {
+        const selection = context.document.getSelection();
+        selection.load("text");
+        await context.sync();
+
+        if (!selection.text.trim()) {
+            showStatus("editStatus", "⚠️ Select text first", "error");
+            return;
+        }
+
+        const prompts = {
+            rewrite: `Rewrite this: ${selection.text}`,
+            summarize: `Summarize this: ${selection.text}`,
+            expand: `Expand on this: ${selection.text}`,
+            format: `Improve formatting: ${selection.text}`
         };
 
-        /***********************************************
-         * Office Ready → Bind events
-         ***********************************************/
-        Office.onReady(() => {
-            document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
-            document.getElementById("generateBtn").addEventListener("click", generateContent);
-            document.getElementById("runCustomBtn").addEventListener("click", runCustom);
+        const response = await callAI(model, apiKey, prompts[action]);
+        selection.insertText(response, Word.InsertLocation.replace);
+        await context.sync();
+        showStatus("editStatus", "Done! 🎉", "success");
+    });
+}
 
-            document.getElementById("modelSelect").addEventListener("change", updateModelUI);
+/*************************************************************
+ * AI API Logic (Gemini 2.0 Flash)
+ *************************************************************/
+async function callAI(model, apiKey, prompt) {
+    const cfg = modelConfig[model];
 
-            document.querySelectorAll("[data-action]").forEach(btn => {
-                btn.addEventListener("click", () => editPreset(btn.dataset.action));
-            });
-
-            updateModelUI();
+    // GEMINI 2.0 FLASH
+    if (model === "gemini") {
+        const url = `${cfg.endpoint}?key=${apiKey}`;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [
+                    {
+                        parts: [{ text: prompt }]
+                    }
+                ]
+            })
         });
 
-        /***********************************************
-         * UI helpers
-         ***********************************************/
-        function updateModelUI() {
-            const model = modelSelect.value;
-            const cfg = modelConfig[model];
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || "Gemini Error");
+        return data.candidates[0].content.parts[0].text;
+    }
 
-            apiKeyLabel.textContent = cfg.name;
-            getKeyLink.href = cfg.link;
+    // OpenAI
+    if (model === "openai") {
+        const res = await fetch(cfg.endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: "gpt-4o",
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
 
-            apiKeyInput.value = localStorage.getItem("apiKey_" + model) || "";
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || "OpenAI Error");
+        return data.choices[0].message.content;
+    }
 
-        function showStatus(id, msg, type) {
-            const el = document.getElementById(id);
-            el.textContent = msg;
-            el.className = "status " + type;
-            el.style.display = "block";
+    // Claude
+    if (model === "claude") {
+        const res = await fetch(cfg.endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": apiKey,
+                "anthropic-version": "2023-06-01"
+            },
+            body: JSON.stringify({
+                model: "claude-3-5-sonnet-20241022",
+                max_tokens: 2000,
+                messages: [{ role: "user", content: prompt }]
+            })
+        });
 
-            setTimeout(() => (el.style.display = "none"), 4500);
-        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || "Claude Error");
+        return data.content[0].text;
+    }
 
-        function saveApiKey() {
-            const model = modelSelect.value;
-            const key = apiKeyInput.value.trim();
-            if (!key) return showStatus("saveStatus", "Please enter a key", "error");
+    throw new Error("Model not implemented.");
+}
 
-            localStorage.setItem("apiKey_" + model, key);
-            showStatus("saveStatus", "Saved ✓", "success");
-        }
+/*************************************************************
+ * Insert Text into Word
+ *************************************************************/
+async function insertText(text) {
+    await Word.run(async (context) => {
+        const selection = context.document.getSelection();
+        selection.insertText(text, Word.InsertLocation.end);
+        await context.sync();
+    });
+}
 
-        /***********************************************
-         * GENERATE CONTENT
-         ***********************************************/
-        async function generateContent() {
-            const prompt = promptInput.value.trim();
-            if (!prompt) return showStatus("generateStatus", "Please enter a prompt", "error");
+/*************************************************************
+ * Helper — Status Messages
+ *************************************************************/
+function showStatus(id, msg, type) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = `status ${type}`;
+    el.style.display = "block";
+    setTimeout(() => { el.style.display = "none"; }, 5000);
+}
 
-            const model = modelSelect.value;
-            const key = localStorage.getItem("apiKey_" + model);
-            if (!key) return showStatus("generateStatus", "Missing API key", "error");
-
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = '<span class="loading"></span> Generating...';
-
-            try {
-                const result = await callAI(model, key, prompt);
-                await insertIntoWord(result);
-
-                promptInput.value = "";
-                showStatus("generateStatus", "Inserted ✓", "success");
-            } catch (err) {
-                showStatus("generateStatus", err.message, "error");
-            } finally {
-                generateBtn.disabled = false;
-                generateBtn.textContent = "✨ Generate & Insert";
-            }
-        }
-
-        /***********************************************
-         * EDIT via PRESET (Rewrite / Summarize ...)
-         ***********************************************/
-        async function editPreset(action) {
-            const model = modelSelect.value;
-            const key = localStorage.getItem("apiKey_" + model);
-            if (!key) return showStatus("editStatus", "Missing API key", "error");
-
-            try {
-                await Word.run(async context => {
-                    const sel = context.document.getSelection();
-                    sel.load("text");
-                    await context.sync();
-
-                    if (!sel.text) return showStatus("editStatus", "No selection", "error");
-
-                    const prompts = {
-                        rewrite: `Rewrite this text clearly and professionally:\n\n${sel.text}`,
-                        summarize: `Summarize this text:\n\n${sel.text}`,
-                        expand: `Expand this text with more detail:\n\n${sel.text}`,
-                        format: `Improve formatting and clarity:\n\n${sel.text}`
-                    };
-
-                    const result = await callAI(model, key, prompts[action]);
-                    sel.insertText(result, Word.InsertLocation.replace);
-                    await context.sync();
-
-                    showStatus("editStatus", "Updated ✓", "success");
-                });
-            } catch (err) {
-                showStatus("editStatus", err.message, "error");
-            }
-        }
-
-        /***********************************************
-         * EDIT via CUSTOM instruction
-         ***********************************************/
-        async function runCustom() {
-            const custom = customInstruction.value.trim();
-            if (!custom) return showStatus("editStatus", "Enter a custom instruction", "error");
-
-            const model = modelSelect.value;
-            const key = localStorage.getItem("apiKey_" + model);
-
-            if (!key) return showStatus("editStatus", "Missing API key", "error");
-
-            try {
-                await Word.run(async context => {
-                    const sel = context.document.getSelection();
-                    sel.load("text");
-                    await context.sync();
-
-                    if (!sel.text) return showStatus("editStatus", "No selection", "error");
-
-                    const finalPrompt = `${custom}\n\nText:\n${sel.text}`;
-
-                    const result = await callAI(model, key, finalPrompt);
-                    sel.insertText(result, Word.InsertLocation.replace);
-                    await context.sync();
-
-                    showStatus("editStatus", "Updated ✓", "success");
-                });
-            } catch (err) {
-                showStatus("editStatus", err.message, "error");
-            }
-        }
-
-        /***********************************************
-         * API Adapters (Gemini / OpenAI / Claude)
-         ***********************************************/
-        async function callAI(model, key, prompt) {
-            const cfg = modelConfig[model];
-
-            /************ Gemini ************/
-            if (model === "gemini") {
-                const res = await fetch(`${cfg.endpoint}?key=${key}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [
-                            { role: "user", parts: [{ text: prompt }] }
-                        ]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "Gemini error");
-
-                return data.candidates[0].content.parts[0].text;
-            }
-
-            /************ OpenAI ************/
-            if (model === "openai") {
-                const res = await fetch(cfg.endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${key}`
-                    },
-                    body: JSON.stringify({
-                        model: cfg.model,
-                        messages: [{ role: "user", content: prompt }]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "OpenAI error");
-
-                return data.choices[0].message.content;
-            }
-
-            /************ Claude ************/
-            if (model === "claude") {
-                const res = await fetch(cfg.endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": key,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    body: JSON.stringify({
-                        model: cfg.model,
-                        max_tokens: 4096,
-                        messages: [{ role: "user", content: prompt }]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "Claude error");
-
-                return data.content[0].text;
-            }
-        }
-
-        /***********************************************
-         * Insert into Word
-         ***********************************************/
-        async function insertIntoWord(text) {
-            await Word.run(async context => {
-                const sel = context.document.getSelection();
-                sel.insertText(text, Word.InsertLocation.replace);
-                await context.sync();
-            });
-        }
-    </script>
+</script>
 </body>
 </html>
 
