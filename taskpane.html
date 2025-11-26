@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BYOK AI Assistant</title>
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 
@@ -23,7 +23,7 @@
         }
 
         .section {
-            background: white;
+            background: #ffffff;
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 18px;
@@ -33,7 +33,10 @@
         .section-title {
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         input, select, textarea {
@@ -45,6 +48,11 @@
             margin-bottom: 12px;
         }
 
+        textarea {
+            min-height: 70px;
+            resize: vertical;
+        }
+
         button {
             width: 100%;
             padding: 12px;
@@ -54,10 +62,23 @@
             cursor: pointer;
         }
 
-        .btn-primary { background: #0078D4; color: white; }
+        .btn-primary { background: #0078D4; color: #ffffff; }
+        .btn-primary:disabled { opacity: 0.7; cursor: default; }
+
         .btn-secondary { background: #efefef; color: #333; }
 
-        .info-text { font-size: 12px; color: #666; margin-bottom: 8px; }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
 
         .status {
             font-size: 12px;
@@ -70,30 +91,51 @@
         .status.success { background: #e8f5e9; color: #2e7d32; display: block; }
         .status.error   { background: #ffebee; color: #c62828; display: block; }
 
-        /* Account & Trial highlight */
         #accountSection {
             border-left: 4px solid #0078D4;
+        }
+
+        #premiumCTA {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #0078D4;
+        }
+
+        a.link {
+            font-size: 12px;
+            color: #0078D4;
+            text-decoration: none;
+        }
+
+        a.link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
+    <h1>BYOK AI Assistant for Word</h1>
 
-    <h1>AI Writing Assistant</h1>
-
-    <!-- STEP 1 — Email + Trial -->
+    <!-- 👤 Account & Trial -->
     <div class="section" id="accountSection">
         <div class="section-title">👤 Account & Trial</div>
 
-        <input type="email" id="userEmailInput" placeholder="Enter your email (used for license)…">
+        <input type="email" id="userEmailInput" placeholder="Enter your email (for license)…" />
         <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
 
         <div class="info-text" id="emailDisplay">Not saved yet.</div>
 
+        <!-- Trial -->
         <div class="status" id="trialStatus"></div>
+
+        <!-- CTA appears only when trial ends -->
+        <div id="premiumCTA" style="display:none;">
+            ⭐ Lifetime premium unlock available.  
+            <a href="#" id="upgradeLink">Upgrade now</a>
+        </div>
     </div>
 
-    <!-- Model Selection -->
+    <!-- 🔑 API -->
     <div class="section">
         <select id="modelSelect">
             <option value="gemini">Google Gemini (Free)</option>
@@ -101,33 +143,50 @@
             <option value="claude">Anthropic Claude</option>
         </select>
 
-        <div class="section-title">🔑 <span id="apiKeyLabel">Gemini API Key</span></div>
-        <input type="password" id="apiKeyInput" placeholder="Enter your API key...">
+        <div class="section-title">
+            🔑 <span id="apiKeyLabel">Gemini API Key</span>
+        </div>
+
+        <input type="password" id="apiKeyInput" placeholder="Enter your API key..." />
         <button class="btn-secondary" id="saveApiKeyBtn">💾 Save Key</button>
+
+        <a class="link" id="getKeyLink" href="https://aistudio.google.com/app/apikey" target="_blank">
+            👉 Get free Gemini API Key
+        </a>
 
         <div id="saveStatus" class="status"></div>
     </div>
 
-    <!-- Generate Content -->
+    <!-- ✨ Generate -->
     <div class="section">
         <div class="section-title">✨ Generate Content</div>
-        <textarea id="promptInput" placeholder="Write an article about AI..."></textarea>
+        <div class="info-text">📍 Inserts at cursor position</div>
+
+        <textarea id="promptInput" placeholder="e.g., Write an introduction about AI and productivity..."></textarea>
+
         <button class="btn-primary" id="generateBtn">✨ Generate & Insert</button>
         <div id="generateStatus" class="status"></div>
     </div>
 
-    <!-- Edit Selection -->
+    <!-- 📝 Edit -->
     <div class="section">
         <div class="section-title">📝 Edit Selection</div>
-        <button class="btn-secondary" onclick="editText('rewrite')">✍️ Rewrite</button>
-        <button class="btn-secondary" onclick="editText('summarize')">📄 Summarize</button>
-        <button class="btn-secondary" onclick="editText('expand')">📈 Expand</button>
-        <button class="btn-secondary" onclick="editText('format')">✨ Format</button>
+        <div class="info-text">✨ Highlight text first</div>
+
+        <div class="btn-grid">
+            <button class="btn-secondary" data-action="rewrite">✏️ Rewrite</button>
+            <button class="btn-secondary" data-action="summarize">📄 Summarize</button>
+            <button class="btn-secondary" data-action="expand">📈 Expand</button>
+            <button class="btn-secondary" data-action="format">✨ Format</button>
+        </div>
+
+        <textarea id="customInstruction" placeholder="Or enter custom instruction..."></textarea>
+
+        <button class="btn-primary" id="runCustomBtn">🚀 Run on Selected</button>
+
         <div id="editStatus" class="status"></div>
     </div>
-
 <script>
-
 /*************************************************************
  * Office Initialization
  *************************************************************/
@@ -137,31 +196,41 @@ Office.onReady(() => {
     document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
     document.getElementById("generateBtn").addEventListener("click", generateContent);
 
-    document.getElementById("modelSelect").addEventListener("change", updateApiKeyLabel);
+    document.getElementById("modelSelect").addEventListener("change", () => {
+        updateApiKeyLabel();
+        updateGetKeyLink();
+    });
+
+    // Preset edit buttons
+    document.querySelectorAll("[data-action]").forEach(btn => {
+        btn.addEventListener("click", () => editPreset(btn.dataset.action));
+    });
+
+    // Custom instruction button
+    document.getElementById("runCustomBtn").addEventListener("click", runCustom);
+
+    // Email / Trial init
+    document.getElementById("saveEmailBtn").addEventListener("click", saveUserEmail);
 
     initUserEmailAndTrial();
     updateApiKeyLabel();
+    updateGetKeyLink();
 });
 
 /*************************************************************
- * Step 1 — Email + Trial Logic
+ * Step 1 — Email + Trial
  *************************************************************/
 const TRIAL_DAYS = 5;
 
 function initUserEmailAndTrial() {
-    const emailInput = document.getElementById("userEmailInput");
-    const saveEmailBtn = document.getElementById("saveEmailBtn");
+    console.log("Initialize Email + Trial");
 
-    saveEmailBtn.addEventListener("click", saveUserEmail);
-
-    // Initialize email
     const savedEmail = localStorage.getItem("byok_user_email");
     if (savedEmail) {
-        emailInput.value = savedEmail;
+        document.getElementById("userEmailInput").value = savedEmail;
         updateEmailDisplay(savedEmail);
     }
 
-    // Initialize trial start time
     let start = localStorage.getItem("byok_trial_start");
     if (!start) {
         start = Date.now().toString();
@@ -174,21 +243,31 @@ function initUserEmailAndTrial() {
 function saveUserEmail() {
     const emailInput = document.getElementById("userEmailInput");
     const email = emailInput.value.trim();
+
     if (!email || !email.includes("@")) {
-        showStatus("trialStatus", "⚠️ Please enter a valid email", "error");
+        showStatus("saveStatus", "⚠️ Please enter a valid email", "error");
         return;
     }
+
     localStorage.setItem("byok_user_email", email);
     updateEmailDisplay(email);
-    showStatus("trialStatus", "✅ Email saved", "success");
+
+    // Show success in its own box (not overwrite trialStatus)
+    showStatus("saveStatus", "✅ Email saved", "success");
+
+    // Re-render trial UI
+    updateTrialStatus();
 }
 
 function updateEmailDisplay(email) {
     document.getElementById("emailDisplay").textContent = `Using email: ${email}`;
 }
 
+/** Trial countdown display */
 function updateTrialStatus() {
-    const statusEl = document.getElementById("trialStatus");
+    const el = document.getElementById("trialStatus");
+    const cta = document.getElementById("premiumCTA");
+
     const start = Number(localStorage.getItem("byok_trial_start") || Date.now());
     const now = Date.now();
 
@@ -196,18 +275,22 @@ function updateTrialStatus() {
     const daysLeft = TRIAL_DAYS - daysUsed;
 
     if (daysLeft > 0) {
-        statusEl.className = "status success";
-        statusEl.style.display = "block";
-        statusEl.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
+        el.className = "status success";
+        el.style.display = "block";
+        el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
+
+        cta.style.display = "none";   // hide upgrade CTA
     } else {
-        statusEl.className = "status error";
-        statusEl.style.display = "block";
-        statusEl.textContent = "🔴 Free trial ended – upgrade required (payment later)";
+        el.className = "status error";
+        el.style.display = "block";
+        el.textContent = "🔴 Free trial ended — upgrade required";
+
+        cta.style.display = "block";  // show upgrade CTA
     }
 }
 
 /*************************************************************
- * Model Config (Gemini MUST use 2.0-flash)
+ * Model Config — Gemini 2.0 Flash
  *************************************************************/
 const modelConfig = {
     gemini: {
@@ -237,6 +320,24 @@ function updateApiKeyLabel() {
     document.getElementById("apiKeyInput").value = saved || "";
 }
 
+function updateGetKeyLink() {
+    const model = document.getElementById("modelSelect").value;
+    const linkEl = document.getElementById("getKeyLink");
+
+    linkEl.style.display = "inline-block";
+
+    if (model === "gemini") {
+        linkEl.href = modelConfig.gemini.link;
+        linkEl.textContent = "👉 Get free Gemini API key";
+    } else if (model === "openai") {
+        linkEl.href = modelConfig.openai.link;
+        linkEl.textContent = "👉 Get OpenAI API key";
+    } else {
+        linkEl.href = modelConfig.claude.link;
+        linkEl.textContent = "👉 Get Anthropic API key";
+    }
+}
+
 function saveApiKey() {
     const model = document.getElementById("modelSelect").value;
     const key = document.getElementById("apiKeyInput").value.trim();
@@ -251,7 +352,7 @@ function saveApiKey() {
 }
 
 /*************************************************************
- * Generate Content (with Gemini 2.0 Flash)
+ * Generate Content
  *************************************************************/
 async function generateContent() {
     const prompt = document.getElementById("promptInput").value.trim();
@@ -267,16 +368,27 @@ async function generateContent() {
         return;
     }
 
+    const btn = document.getElementById("generateBtn");
+    btn.disabled = true;
+    btn.textContent = "⏳ Generating…";
+
     try {
         const result = await callAI(model, apiKey, prompt);
         await insertText(result);
         showStatus("generateStatus", "Inserted successfully! 🎉", "success");
     } catch (err) {
+        console.error(err);
         showStatus("generateStatus", "❌ " + err.message, "error");
+    } finally {
+        btn.disabled = false;
+        btn.textContent = "✨ Generate & Insert";
     }
 }
 
-async function editText(action) {
+/*************************************************************
+ * Edit with preset prompts
+ *************************************************************/
+async function editPreset(action) {
     const model = document.getElementById("modelSelect").value;
     const apiKey = localStorage.getItem(`apiKey_${model}`);
 
@@ -285,37 +397,89 @@ async function editText(action) {
         return;
     }
 
-    await Word.run(async (context) => {
-        const selection = context.document.getSelection();
-        selection.load("text");
-        await context.sync();
+    try {
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            selection.load("text");
+            await context.sync();
 
-        if (!selection.text.trim()) {
-            showStatus("editStatus", "⚠️ Select text first", "error");
-            return;
-        }
+            const selectedText = selection.text.trim();
+            if (!selectedText) {
+                showStatus("editStatus", "⚠️ Select some text first", "error");
+                return;
+            }
 
-        const prompts = {
-            rewrite: `Rewrite this: ${selection.text}`,
-            summarize: `Summarize this: ${selection.text}`,
-            expand: `Expand on this: ${selection.text}`,
-            format: `Improve formatting: ${selection.text}`
-        };
+            const prompts = {
+                rewrite: `Rewrite this text clearly and professionally:\n\n${selectedText}`,
+                summarize: `Summarize the following text:\n\n${selectedText}`,
+                expand: `Expand on this text with more details:\n\n${selectedText}`,
+                format: `Improve the formatting and clarity:\n\n${selectedText}`
+            };
 
-        const response = await callAI(model, apiKey, prompts[action]);
-        selection.insertText(response, Word.InsertLocation.replace);
-        await context.sync();
-        showStatus("editStatus", "Done! 🎉", "success");
-    });
+            const prompt = prompts[action];
+            const response = await callAI(model, apiKey, prompt);
+
+            selection.insertText(response, Word.InsertLocation.replace);
+            await context.sync();
+
+            showStatus("editStatus", "Done! 🎉", "success");
+        });
+    } catch (err) {
+        console.error(err);
+        showStatus("editStatus", "❌ " + err.message, "error");
+    }
 }
 
 /*************************************************************
- * AI API Logic (Gemini 2.0 Flash)
+ * Edit — Custom instruction
+ *************************************************************/
+async function runCustom() {
+    const instruction = document.getElementById("customInstruction").value.trim();
+    if (!instruction) {
+        showStatus("editStatus", "⚠️ Enter a custom instruction", "error");
+        return;
+    }
+
+    const model = document.getElementById("modelSelect").value;
+    const apiKey = localStorage.getItem(`apiKey_${model}`);
+    if (!apiKey) {
+        showStatus("editStatus", "⚠️ Save your API key first", "error");
+        return;
+    }
+
+    try {
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            selection.load("text");
+            await context.sync();
+
+            const selected = selection.text.trim();
+            if (!selected) {
+                showStatus("editStatus", "⚠️ Select text first", "error");
+                return;
+            }
+
+            const prompt = `${instruction}\n\nText:\n${selected}`;
+            const output = await callAI(model, apiKey, prompt);
+
+            selection.insertText(output, Word.InsertLocation.replace);
+            await context.sync();
+
+            showStatus("editStatus", "✅ Custom applied!", "success");
+        });
+    } catch (err) {
+        console.error(err);
+        showStatus("editStatus", "❌ " + err.message, "error");
+    }
+}
+
+/*************************************************************
+ * AI API Logic — Gemini 2.0 Flash
  *************************************************************/
 async function callAI(model, apiKey, prompt) {
     const cfg = modelConfig[model];
 
-    // GEMINI 2.0 FLASH
+    // --- Gemini 2.0 Flash ---
     if (model === "gemini") {
         const url = `${cfg.endpoint}?key=${apiKey}`;
         const res = await fetch(url, {
@@ -332,16 +496,17 @@ async function callAI(model, apiKey, prompt) {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || "Gemini Error");
+
         return data.candidates[0].content.parts[0].text;
     }
 
-    // OpenAI
+    // --- OpenAI ---
     if (model === "openai") {
         const res = await fetch(cfg.endpoint, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                Authorization: `Bearer ${apiKey}`
+                "Authorization": `Bearer ${apiKey}`
             },
             body: JSON.stringify({
                 model: "gpt-4o",
@@ -351,10 +516,11 @@ async function callAI(model, apiKey, prompt) {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || "OpenAI Error");
+
         return data.choices[0].message.content;
     }
 
-    // Claude
+    // --- Claude ---
     if (model === "claude") {
         const res = await fetch(cfg.endpoint, {
             method: "POST",
@@ -372,6 +538,7 @@ async function callAI(model, apiKey, prompt) {
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || "Claude Error");
+
         return data.content[0].text;
     }
 
@@ -379,7 +546,7 @@ async function callAI(model, apiKey, prompt) {
 }
 
 /*************************************************************
- * Insert Text into Word
+ * Insert text to Word
  *************************************************************/
 async function insertText(text) {
     await Word.run(async (context) => {
@@ -390,17 +557,19 @@ async function insertText(text) {
 }
 
 /*************************************************************
- * Helper — Status Messages
+ * Status helper
  *************************************************************/
 function showStatus(id, msg, type) {
     const el = document.getElementById(id);
     el.textContent = msg;
     el.className = `status ${type}`;
     el.style.display = "block";
-    setTimeout(() => { el.style.display = "none"; }, 5000);
-}
 
+    // Only auto-hide non-trial messages
+    if (id !== "trialStatus") {
+        setTimeout(() => { el.style.display = "none"; }, 3500);
+    }
+}
 </script>
 </body>
 </html>
-
