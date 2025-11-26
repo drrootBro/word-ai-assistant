@@ -67,12 +67,17 @@
             transition: all 0.2s;
         }
         
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         .btn-primary {
             background: #2196F3;
             color: white;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #1976D2;
         }
         
@@ -82,7 +87,7 @@
             margin-bottom: 8px;
         }
         
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: #e0e0e0;
         }
         
@@ -131,11 +136,27 @@
         .status.success {
             background: #e8f5e9;
             color: #2e7d32;
+            display: block;
         }
         
         .status.error {
             background: #ffebee;
             color: #c62828;
+            display: block;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -148,7 +169,6 @@
             <option value="gemini">Google Gemini (Free)</option>
             <option value="openai">OpenAI GPT-4</option>
             <option value="claude">Anthropic Claude</option>
-            <option value="openrouter">OpenRouter</option>
         </select>
         
         <div class="section-title">🔑 <span id="apiKeyLabel">Gemini API Key</span></div>
@@ -164,7 +184,8 @@
         <div class="section-title">✨ Generate Content</div>
         <div class="info-text">📍 Inserts at cursor position</div>
         <textarea id="promptInput" placeholder="e.g., Write an article about AI..."></textarea>
-        <button class="btn-primary" onclick="generateContent()">✨ Generate & Insert</button>
+        <button class="btn-primary" id="generateBtn" onclick="generateContent()">✨ Generate & Insert</button>
+        <div id="generateStatus" class="status"></div>
     </div>
     
     <!-- Edit Selection -->
@@ -177,22 +198,25 @@
             <button class="btn-secondary" onclick="editText('expand')">📈 Expand</button>
             <button class="btn-secondary" onclick="editText('format')">✨ Format</button>
         </div>
+        <div id="editStatus" class="status"></div>
     </div>
 
     <script>
+        console.log('Script loaded');
+        
         // Office.js initialization
         Office.onReady((info) => {
-            console.log('Office Add-in ready');
+            console.log('Office Add-in ready', info);
             loadSavedApiKey();
             updateApiKeyLabel();
         });
         
-        // Model configuration
+        // Model configuration - UPDATED API ENDPOINTS
         const modelConfig = {
             gemini: {
                 name: 'Gemini API Key',
                 link: 'https://aistudio.google.com/app/apikey',
-                endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+                endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
             },
             openai: {
                 name: 'OpenAI API Key',
@@ -203,22 +227,22 @@
                 name: 'Anthropic API Key',
                 link: 'https://console.anthropic.com/',
                 endpoint: 'https://api.anthropic.com/v1/messages'
-            },
-            openrouter: {
-                name: 'OpenRouter API Key',
-                link: 'https://openrouter.ai/keys',
-                endpoint: 'https://openrouter.ai/api/v1/chat/completions'
             }
         };
         
         // Update API key label and link based on selected model
-        document.getElementById('modelSelect').addEventListener('change', updateApiKeyLabel);
+        document.getElementById('modelSelect').addEventListener('change', () => {
+            console.log('Model changed');
+            updateApiKeyLabel();
+            loadSavedApiKey();
+        });
         
         function updateApiKeyLabel() {
             const model = document.getElementById('modelSelect').value;
             const config = modelConfig[model];
             document.getElementById('apiKeyLabel').textContent = config.name;
             document.getElementById('getKeyLink').href = config.link;
+            console.log('Updated API key label for:', model);
         }
         
         function openApiKeyPage(e) {
@@ -229,22 +253,25 @@
         
         // Save API key to localStorage
         function saveApiKey() {
+            console.log('Saving API key...');
             const model = document.getElementById('modelSelect').value;
             const apiKey = document.getElementById('apiKeyInput').value.trim();
             
             if (!apiKey) {
-                showStatus('Please enter an API key', 'error');
+                showStatus('saveStatus', 'Please enter an API key', 'error');
                 return;
             }
             
             localStorage.setItem(`apiKey_${model}`, apiKey);
-            showStatus('API key saved successfully!', 'success');
+            console.log('API key saved for:', model);
+            showStatus('saveStatus', 'API key saved successfully! ✅', 'success');
         }
         
         // Load saved API key
         function loadSavedApiKey() {
             const model = document.getElementById('modelSelect').value;
             const savedKey = localStorage.getItem(`apiKey_${model}`);
+            console.log('Loading saved key for:', model, 'Found:', !!savedKey);
             if (savedKey) {
                 document.getElementById('apiKeyInput').value = savedKey;
             } else {
@@ -252,51 +279,66 @@
             }
         }
         
-        document.getElementById('modelSelect').addEventListener('change', loadSavedApiKey);
-        
-        // Show status message
-        function showStatus(message, type) {
-            const status = document.getElementById('saveStatus');
+        // Show status message - NO ALERT!
+        function showStatus(elementId, message, type) {
+            const status = document.getElementById(elementId);
             status.textContent = message;
             status.className = `status ${type}`;
-            status.style.display = 'block';
+            console.log('Status:', type, message);
             setTimeout(() => {
                 status.style.display = 'none';
-            }, 3000);
+            }, 5000);
         }
         
         // Generate content
         async function generateContent() {
+            console.log('Generate button clicked');
             const prompt = document.getElementById('promptInput').value.trim();
+            
             if (!prompt) {
-                alert('Please enter a prompt');
+                showStatus('generateStatus', '⚠️ Please enter a prompt', 'error');
                 return;
             }
             
             const model = document.getElementById('modelSelect').value;
             const apiKey = localStorage.getItem(`apiKey_${model}`);
             
+            console.log('Model:', model, 'Has API Key:', !!apiKey);
+            
             if (!apiKey) {
-                alert('Please save your API key first');
+                showStatus('generateStatus', '⚠️ Please save your API key first', 'error');
                 return;
             }
             
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Generating...';
+            
             try {
+                console.log('Calling AI...');
                 const response = await callAI(model, apiKey, prompt);
+                console.log('AI Response received:', response.substring(0, 100));
+                
                 await insertText(response);
                 document.getElementById('promptInput').value = '';
+                showStatus('generateStatus', '✅ Content generated successfully!', 'success');
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Generation error:', error);
+                showStatus('generateStatus', '❌ Error: ' + error.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '✨ Generate & Insert';
             }
         }
         
         // Edit selected text
         async function editText(action) {
+            console.log('Edit action:', action);
             const model = document.getElementById('modelSelect').value;
             const apiKey = localStorage.getItem(`apiKey_${model}`);
             
             if (!apiKey) {
-                alert('Please save your API key first');
+                showStatus('editStatus', '⚠️ Please save your API key first', 'error');
                 return;
             }
             
@@ -307,8 +349,10 @@
                     await context.sync();
                     
                     const selectedText = selection.text;
+                    console.log('Selected text length:', selectedText.length);
+                    
                     if (!selectedText) {
-                        alert('Please select some text first');
+                        showStatus('editStatus', '⚠️ Please select some text first', 'error');
                         return;
                     }
                     
@@ -322,40 +366,98 @@
                     const response = await callAI(model, apiKey, prompts[action]);
                     selection.insertText(response, Word.InsertLocation.replace);
                     await context.sync();
+                    showStatus('editStatus', '✅ Text edited successfully!', 'success');
                 });
             } catch (error) {
-                alert('Error: ' + error.message);
+                console.error('Edit error:', error);
+                showStatus('editStatus', '❌ Error: ' + error.message, 'error');
             }
         }
         
-        // Call AI API
+        // Call AI API - FIXED ENDPOINT
         async function callAI(model, apiKey, prompt) {
+            console.log('Calling API for model:', model);
             const config = modelConfig[model];
             
             if (model === 'gemini') {
-                const response = await fetch(`${config.endpoint}?key=${apiKey}`, {
+                const url = `${config.endpoint}?key=${apiKey}`;
+                console.log('Gemini API URL:', url.replace(apiKey, 'xxx'));
+                
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }]
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('API response status:', response.status);
+                console.log('API response:', data);
+                
+                if (!response.ok) {
+                    console.error('API error:', data);
+                    throw new Error(data.error?.message || `API Error (${response.status})`);
+                }
+                
+                if (!data.candidates || !data.candidates[0]) {
+                    throw new Error('Invalid API response format');
+                }
+                
+                return data.candidates[0].content.parts[0].text;
+            }
+            
+            if (model === 'openai') {
+                const response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: 'gpt-4',
+                        messages: [{ role: 'user', content: prompt }]
                     })
                 });
                 
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.error?.message || 'API Error');
-                return data.candidates[0].content.parts[0].text;
+                return data.choices[0].message.content;
             }
             
-            // Add other models here (OpenAI, Claude, etc.)
-            throw new Error('Model not yet implemented');
+            if (model === 'claude') {
+                const response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01'
+                    },
+                    body: JSON.stringify({
+                        model: 'claude-3-5-sonnet-20241022',
+                        max_tokens: 4096,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || 'API Error');
+                return data.content[0].text;
+            }
+            
+            throw new Error('Model not implemented');
         }
         
         // Insert text at cursor
         async function insertText(text) {
+            console.log('Inserting text, length:', text.length);
             await Word.run(async (context) => {
                 const selection = context.document.getSelection();
                 selection.insertText(text, Word.InsertLocation.end);
                 await context.sync();
+                console.log('Text inserted successfully');
             });
         }
     </script>
