@@ -1,484 +1,340 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>BYOK AI Assistant</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYOK AI Assistant</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: #f5f5f5;
-      padding: 20px;
-    }
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        h1 { font-size: 24px; font-weight: 600; margin-bottom: 20px; color: #333; }
 
-    h1 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: #333;
-    }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .section-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        select, input, textarea {
+            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 14px; margin-bottom: 12px;
+        }
+        button {
+            width: 100%; padding: 12px; border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .section {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-    }
+        .btn-primary { background: #2196F3; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #1976D2; }
 
-    .section-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        .btn-secondary { background: #f0f0f0; color: #333; margin-bottom: 8px; }
+        .btn-secondary:hover:not(:disabled) { background: #e0e0e0; }
 
-    select, input, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
-      margin-bottom: 10px;
-      outline: none;
-    }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+        .info-text { font-size: 12px; color: #666; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
 
-    select:focus, input:focus, textarea:focus {
-      border-color: #1a73e8;
-      box-shadow: 0 0 0 1px rgba(26, 115, 232, 0.2);
-    }
+        .link { color: #2196F3; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+        .link:hover { text-decoration: underline; }
 
-    select {
-      background: white;
-      cursor: pointer;
-    }
+        textarea { min-height: 80px; resize: vertical; }
 
-    button {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
+        .status {
+            font-size: 12px; padding: 8px; border-radius: 6px;
+            margin-top: 8px; display: none;
+        }
+        .status.success { background: #e8f5e9; color: #2e7d32; display: block; }
+        .status.error { background: #ffebee; color: #c62828; display: block; }
 
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: #1a73e8;
-      color: white;
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: #1664c4;
-    }
-
-    .btn-secondary {
-      background: #f3f4f6;
-      color: #111827;
-      margin-bottom: 6px;
-    }
-
-    .btn-secondary:hover:not(:disabled) {
-      background: #e5e7eb;
-    }
-
-    .btn-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .info-text {
-      font-size: 12px;
-      color: #6b7280;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .link {
-      color: #1a73e8;
-      text-decoration: none;
-      font-size: 13px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .link:hover {
-      text-decoration: underline;
-    }
-
-    textarea {
-      min-height: 80px;
-      resize: vertical;
-    }
-
-    .status {
-      font-size: 12px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      margin-top: 8px;
-      display: none;
-    }
-
-    .status.success {
-      display: block;
-      background: #e8f5e9;
-      color: #2e7d32;
-    }
-
-    .status.error {
-      display: block;
-      background: #ffebee;
-      color: #c62828;
-    }
-  </style>
+        .loading {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid #fff; border-radius: 50%;
+            border-top-color: transparent; animation: spin 0.6s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
+
 <body>
-  <h1>AI Writing Assistant</h1>
+    <h1>AI Writing Assistant</h1>
 
-  <!-- Provider + API Key -->
-  <div class="section">
-    <select id="providerSelect">
-      <option value="gemini">Google Gemini (Free)</option>
-      <option value="openai">OpenAI GPT</option>
-    </select>
+    <!-- Model Selection -->
+    <div class="section">
+        <select id="modelSelect">
+            <option value="gemini">Google Gemini (Free)</option>
+            <option value="openai">OpenAI GPT-4o-mini</option>
+            <option value="claude">Anthropic Claude</option>
+        </select>
 
-    <div class="section-title">
-      🔑 <span id="apiKeyLabel">Gemini API Key</span>
+        <div class="section-title">🔑 <span id="apiKeyLabel">Gemini API Key</span></div>
+        <input type="password" id="apiKeyInput" placeholder="Enter your API key..." />
+
+        <button class="btn-secondary" id="saveApiKeyBtn">💾 Save Key</button>
+        <a href="#" class="link" id="getKeyLink">👉 Get free API key</a>
+
+        <div id="saveStatus" class="status"></div>
     </div>
 
-    <input type="password" id="apiKeyInput" placeholder="Enter your API key...">
+    <!-- Generate Content -->
+    <div class="section">
+        <div class="section-title">✨ Generate Content</div>
+        <div class="info-text">📍 Inserts at cursor position</div>
 
-    <button class="btn-secondary" id="saveKeyBtn">💾 Save Key</button>
+        <textarea id="promptInput" placeholder="e.g., Write an article about AI..."></textarea>
 
-    <a href="#" class="link" id="getKeyLink">👉 Get free API key</a>
-
-    <div id="saveStatus" class="status"></div>
-  </div>
-
-  <!-- Generate Content -->
-  <div class="section">
-    <div class="section-title">✨ Generate Content</div>
-    <div class="info-text">📍 Inserts at cursor position (or replaces selection)</div>
-    <textarea id="promptInput" placeholder="e.g., Write an article about AI writing assistants for busy researchers..."></textarea>
-    <button class="btn-primary" id="generateBtn">✨ Generate &amp; Insert</button>
-    <div id="generateStatus" class="status"></div>
-  </div>
-
-  <!-- Edit Selection -->
-  <div class="section">
-    <div class="section-title">📝 Edit Selection</div>
-    <div class="info-text">✨ Highlight text first</div>
-    <div class="btn-grid">
-      <button class="btn-secondary" id="btnRewrite">✍️ Rewrite</button>
-      <button class="btn-secondary" id="btnSummarize">📄 Summarize</button>
-      <button class="btn-secondary" id="btnExpand">📈 Expand</button>
-      <button class="btn-secondary" id="btnFormat">✨ Format</button>
+        <button class="btn-primary" id="generateBtn">✨ Generate & Insert</button>
+        <div id="generateStatus" class="status"></div>
     </div>
-    <div id="editStatus" class="status"></div>
-  </div>
 
-  <script>
-    console.log("Script started");
+    <!-- Edit Selection -->
+    <div class="section">
+        <div class="section-title">📝 Edit Selection</div>
+        <div class="info-text">✨ Highlight text first</div>
 
-    // ✅ 替换成你的 Apps Script Web App URL（/exec 结尾）
-    const CONFIG = {
-      API_ENDPOINT: "https://script.google.com/macros/s/AKfycbyj0C_rLQrGugpil_2UrTaRbkxb-71id0L_amEUAaeZo0K3hKvOQRJ8doMRrv3LuKsU/exec"
-    };
+        <div class="btn-grid">
+            <button class="btn-secondary" data-action="rewrite">✍️ Rewrite</button>
+            <button class="btn-secondary" data-action="summarize">📄 Summarize</button>
+            <button class="btn-secondary" data-action="expand">📈 Expand</button>
+            <button class="btn-secondary" data-action="format">✨ Format</button>
+        </div>
 
-    const STORAGE_PREFIX = "byok_word_"; // 避免和 Docs 冲突
+        <div id="editStatus" class="status"></div>
+    </div>
 
-    function getProvider() {
-      return document.getElementById("providerSelect").value;
-    }
+    <script>
+        /***************************************
+         *  MODEL CONFIG
+         ***************************************/
+        const modelConfig = {
+            gemini: {
+                name: "Gemini API Key",
+                link: "https://aistudio.google.com/app/apikey",
+                endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+            },
+            openai: {
+                name: "OpenAI API Key",
+                link: "https://platform.openai.com/api-keys",
+                endpoint: "https://api.openai.com/v1/chat/completions",
+                model: "gpt-4o-mini"
+            },
+            claude: {
+                name: "Anthropic API Key",
+                link: "https://console.anthropic.com/",
+                endpoint: "https://api.anthropic.com/v1/messages",
+                model: "claude-3-5-sonnet-20241022"
+            }
+        };
 
-    function getStorageKeyForProvider() {
-      return STORAGE_PREFIX + "apiKey_" + getProvider();
-    }
+        /***************************************
+         *  Office Ready → Bind Events
+         ***************************************/
+        Office.onReady(() => {
+            console.log("Office ready");
 
-    function showStatus(elementId, message, type) {
-      const el = document.getElementById(elementId);
-      if (!el) return;
-      el.textContent = message;
-      el.className = "status " + (type || "");
-      el.style.display = "block";
-      console.log("Status:", elementId, type, message);
-    }
+            document.getElementById("generateBtn")
+                .addEventListener("click", generateContent);
 
-    function clearStatus(elementId) {
-      const el = document.getElementById(elementId);
-      if (!el) return;
-      el.textContent = "";
-      el.style.display = "none";
-    }
+            document.getElementById("saveApiKeyBtn")
+                .addEventListener("click", saveApiKey);
 
-    function setBusy(isBusy) {
-      const ids = [
-        "saveKeyBtn",
-        "generateBtn",
-        "btnRewrite",
-        "btnSummarize",
-        "btnExpand",
-        "btnFormat"
-      ];
-      ids.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) btn.disabled = isBusy;
-      });
-    }
+            document.getElementById("modelSelect")
+                .addEventListener("change", updateModelUI);
 
-    function updateApiKeyLabelAndLink() {
-      const provider = getProvider();
-      const labelEl = document.getElementById("apiKeyLabel");
-      const linkEl = document.getElementById("getKeyLink");
-      if (!labelEl || !linkEl) return;
+            document.querySelectorAll("[data-action]").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    editText(btn.dataset.action);
+                });
+            });
 
-      if (provider === "gemini") {
-        labelEl.textContent = "Gemini API Key";
-        linkEl.textContent = "👉 Get free Gemini API key";
-        linkEl.href = "https://aistudio.google.com/app/apikey";
-      } else if (provider === "openai") {
-        labelEl.textContent = "OpenAI API Key";
-        linkEl.textContent = "👉 Get OpenAI API key";
-        linkEl.href = "https://platform.openai.com/api-keys";
-      }
-      console.log("Updated labels for provider:", provider);
-    }
-
-    function loadSavedApiKey() {
-      const key = localStorage.getItem(getStorageKeyForProvider());
-      const input = document.getElementById("apiKeyInput");
-      if (input) {
-        input.value = key || "";
-      }
-      console.log("Loaded API key:", !!key);
-    }
-
-    function saveApiKey() {
-      console.log("Save button clicked");
-      const input = document.getElementById("apiKeyInput");
-      if (!input) return;
-      const value = input.value.trim();
-      if (!value) {
-        showStatus("saveStatus", "Please enter an API key.", "error");
-        return;
-      }
-      localStorage.setItem(getStorageKeyForProvider(), value);
-      showStatus("saveStatus", "API key saved locally.", "success");
-    }
-
-    async function getSelectionText() {
-      return Word.run(async (context) => {
-        const range = context.document.getSelection();
-        range.load("text");
-        await context.sync();
-        return range.text || "";
-      });
-    }
-
-    async function insertOrReplaceText(text) {
-      return Word.run(async (context) => {
-        const range = context.document.getSelection();
-        range.load("text");
-        await context.sync();
-
-        if (range.text) {
-          range.insertText(text, Word.InsertLocation.replace);
-        } else {
-          range.insertText(text, Word.InsertLocation.insert);
-        }
-        await context.sync();
-      });
-    }
-
-    // ✅ 统一调用你的 Apps Script 后端（和 Docs 一致）
-    async function callBackend(mode, prompt, selectionText) {
-      console.log("Calling backend:", mode);
-      
-      if (!CONFIG.API_ENDPOINT) {
-        throw new Error("API endpoint is not configured.");
-      }
-
-      const provider = getProvider();
-      const apiKey = localStorage.getItem(getStorageKeyForProvider()) || "";
-
-      console.log("Provider:", provider, "Has key:", !!apiKey);
-
-      if (!apiKey) {
-        throw new Error("Please save your API key first.");
-      }
-
-      const body = {
-        provider: provider,
-        apiKey: apiKey,
-        mode: mode,
-        prompt: prompt || "",
-        selectionText: selectionText || ""
-      };
-
-      console.log("Sending request to:", CONFIG.API_ENDPOINT);
-
-      const res = await fetch(CONFIG.API_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-
-      console.log("Response status:", res.status);
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error("Request failed: " + res.status + " - " + text);
-      }
-
-      const data = await res.json();
-      console.log("Response data:", data);
-      
-      if (!data || !data.success) {
-        throw new Error((data && data.error) || "Unknown error from backend");
-      }
-      return data.output;
-    }
-
-    async function handleGenerate() {
-      console.log("Generate button clicked!");
-      clearStatus("generateStatus");
-      const prompt = document.getElementById("promptInput").value.trim();
-      
-      console.log("Prompt:", prompt);
-      
-      if (!prompt) {
-        showStatus("generateStatus", "Please enter a prompt.", "error");
-        return;
-      }
-
-      try {
-        setBusy(true);
-        showStatus("generateStatus", "Calling AI...", "success");
-        const output = await callBackend("generate", prompt, "");
-        console.log("Got output, length:", output.length);
-        
-        if (!output) {
-          showStatus("generateStatus", "AI returned empty result.", "error");
-          return;
-        }
-        await insertOrReplaceText(output);
-        showStatus("generateStatus", "Inserted successfully.", "success");
-      } catch (err) {
-        console.error("Error:", err);
-        showStatus("generateStatus", "Error: " + (err.message || String(err)), "error");
-      } finally {
-        setBusy(false);
-      }
-    }
-
-    async function handleEdit(mode) {
-      console.log("Edit button clicked:", mode);
-      clearStatus("editStatus");
-      try {
-        setBusy(true);
-        const selectionText = await getSelectionText();
-        console.log("Selection text length:", selectionText.length);
-        
-        if (!selectionText) {
-          showStatus("editStatus", "Please select some text first.", "error");
-          return;
-        }
-        showStatus("editStatus", "Calling AI...", "success");
-        const output = await callBackend(mode, "", selectionText);
-        if (!output) {
-          showStatus("editStatus", "AI returned empty result.", "error");
-          return;
-        }
-
-        await Word.run(async (context) => {
-          const range = context.document.getSelection();
-          range.insertText(output, Word.InsertLocation.replace);
-          await context.sync();
+            updateModelUI();
         });
 
-        showStatus("editStatus", "Selection updated.", "success");
-      } catch (err) {
-        console.error("Error:", err);
-        showStatus("editStatus", "Error: " + (err.message || String(err)), "error");
-      } finally {
-        setBusy(false);
-      }
-    }
+        /***************************************
+         *  UI Helpers
+         ***************************************/
+        function updateModelUI() {
+            const model = document.getElementById("modelSelect").value;
+            const cfg = modelConfig[model];
 
-    // ✅ 修复：直接在 Office.onReady 里绑定事件，不要等待 DOMContentLoaded！
-    Office.onReady((info) => {
-      console.log("Office.onReady called", info);
-      
-      if (info.host === Office.HostType.Word) {
-        console.log("Host is Word, binding events...");
-        
-        // provider 变化时更新 label + link + key
-        const providerSelect = document.getElementById("providerSelect");
-        if (providerSelect) {
-          providerSelect.addEventListener("change", () => {
-            console.log("Provider changed");
-            updateApiKeyLabelAndLink();
-            loadSavedApiKey();
-            clearStatus("saveStatus");
-          });
+            document.getElementById("apiKeyLabel").textContent = cfg.name;
+            document.getElementById("getKeyLink").href = cfg.link;
+
+            const saved = localStorage.getItem("apiKey_" + model);
+            document.getElementById("apiKeyInput").value = saved || "";
         }
 
-        // 绑定按钮
-        const saveBtn = document.getElementById("saveKeyBtn");
-        if (saveBtn) {
-          saveBtn.onclick = saveApiKey;
-          console.log("Save button bound");
+        function showStatus(id, msg, type) {
+            const el = document.getElementById(id);
+            el.textContent = msg;
+            el.className = "status " + type;
+
+            setTimeout(() => (el.style.display = "none"), 5000);
         }
 
-        const genBtn = document.getElementById("generateBtn");
-        if (genBtn) {
-          genBtn.onclick = handleGenerate;
-          console.log("Generate button bound");
+        function saveApiKey() {
+            const model = modelSelect.value;
+            const key = apiKeyInput.value.trim();
+
+            if (!key) return showStatus("saveStatus", "Please enter a key", "error");
+
+            localStorage.setItem("apiKey_" + model, key);
+            showStatus("saveStatus", "Saved successfully! ✅", "success");
         }
 
-        const btnRewrite = document.getElementById("btnRewrite");
-        const btnSummarize = document.getElementById("btnSummarize");
-        const btnExpand = document.getElementById("btnExpand");
-        const btnFormat = document.getElementById("btnFormat");
+        /***************************************
+         *  Generate / Edit
+         ***************************************/
+        async function generateContent() {
+            const prompt = promptInput.value.trim();
+            if (!prompt) return showStatus("generateStatus", "Please enter a prompt", "error");
 
-        if (btnRewrite) btnRewrite.onclick = () => handleEdit("rewrite");
-        if (btnSummarize) btnSummarize.onclick = () => handleEdit("summarize");
-        if (btnExpand)   btnExpand.onclick   = () => handleEdit("expand");
-        if (btnFormat)   btnFormat.onclick   = () => handleEdit("format");
+            const model = modelSelect.value;
+            const key = localStorage.getItem("apiKey_" + model);
+            if (!key) return showStatus("generateStatus", "Please save API key first", "error");
 
-        console.log("Edit buttons bound");
+            const btn = generateBtn;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Generating…';
 
-        // 初始化
-        updateApiKeyLabelAndLink();
-        loadSavedApiKey();
-        
-        console.log("Initialization complete");
-      }
-    });
-  </script>
-</body>
-</html>
-  </script>
+            try {
+                const text = await callAI(model, key, prompt);
+                await insertText(text);
+                promptInput.value = "";
+                showStatus("generateStatus", "Generated successfully! ✅", "success");
+            } catch (err) {
+                showStatus("generateStatus", "Error: " + err.message, "error");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = "✨ Generate & Insert";
+            }
+        }
+
+        async function editText(action) {
+            const model = modelSelect.value;
+            const key = localStorage.getItem("apiKey_" + model);
+            if (!key) return showStatus("editStatus", "Please save API key first", "error");
+
+            try {
+                await Word.run(async context => {
+                    const selection = context.document.getSelection();
+                    selection.load("text");
+                    await context.sync();
+
+                    if (!selection.text) {
+                        return showStatus("editStatus", "Please select text first", "error");
+                    }
+
+                    const prompts = {
+                        rewrite: `Rewrite this professionally:\n\n${selection.text}`,
+                        summarize: `Summarize concisely:\n\n${selection.text}`,
+                        expand: `Expand with more detail:\n\n${selection.text}`,
+                        format: `Improve structure and clarity:\n\n${selection.text}`
+                    };
+
+                    const text = await callAI(model, key, prompts[action]);
+                    selection.insertText(text, Word.InsertLocation.replace);
+                    await context.sync();
+
+                    showStatus("editStatus", "Edited successfully! ✅", "success");
+                });
+            } catch (err) {
+                showStatus("editStatus", "Error: " + err.message, "error");
+            }
+        }
+
+        /***************************************
+         *  API Adapters
+         ***************************************/
+        async function callAI(model, apiKey, prompt) {
+            const cfg = modelConfig[model];
+
+            // --- Gemini ---
+            if (model === "gemini") {
+                const url = `${cfg.endpoint}?key=${apiKey}`;
+
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                role: "user",
+                                parts: [{ text: prompt }]
+                            }
+                        ]
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || "Gemini error");
+
+                return data.candidates[0].content.parts[0].text;
+            }
+
+            // --- OpenAI ---
+            if (model === "openai") {
+                const res = await fetch(cfg.endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: cfg.model,
+                        messages: [{ role: "user", content: prompt }]
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || "OpenAI error");
+
+                return data.choices[0].message.content;
+            }
+
+            // --- Claude ---
+            if (model === "claude") {
+                const res = await fetch(cfg.endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "x-api-key": apiKey,
+                        "anthropic-version": "2023-06-01"
+                    },
+                    body: JSON.stringify({
+                        model: cfg.model,
+                        max_tokens: 4096,
+                        messages: [{ role: "user", content: prompt }]
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || "Claude error");
+
+                return data.content[0].text;
+            }
+
+            throw new Error("Model not implemented");
+        }
+
+        /***************************************
+         *  Word insertion
+         ***************************************/
+        async function insertText(text) {
+            await Word.run(async context => {
+                const sel = context.document.getSelection();
+                sel.insertText(text, Word.InsertLocation.replace);
+                await context.sync();
+            });
+        }
+    </script>
 </body>
 </html>
