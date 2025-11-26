@@ -3,9 +3,9 @@
   xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
   xsi:type="TaskPaneApp">
-  <Id>f4e3d1c0-0000-0000-0000-000000000001</Id>
+  
+  <Id>f4e3d1c0-5a1b-4c2d-9e3f-4a5b6c7d8e9f</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>DrRootBro</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
@@ -14,20 +14,24 @@
   <IconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-80.png"/>
   <SupportUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/"/>
+  
   <Hosts>
     <Host Name="Document"/>
   </Hosts>
+  
   <Requirements>
     <Sets DefaultMinVersion="1.3">
       <Set Name="WordApi"/>
     </Sets>
   </Requirements>
+  
   <DefaultSettings>
     <SourceLocation DefaultValue="https://drrootbro.github.io/word-ai-assistant/taskpane.html"/>
   </DefaultSettings>
+  
   <Permissions>ReadWriteDocument</Permissions>
-  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
-                    xsi:type="VersionOverridesV1_0">
+  
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Hosts>
       <Host xsi:type="Document">
         <DesktopFormFactor>
@@ -36,15 +40,22 @@
             <Description resid="GetStarted.Description"/>
             <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
           </GetStarted>
+          
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
-              <Group id="Group.ByokAiAssistant">
-                <Label resid="Group.Label"/>
-                <Control xsi:type="Button" id="Button.TaskPane">
-                  <Label resid="Button.Label"/>
+              <Group id="CommandsGroup.Group1">
+                <Label resid="CommandsGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
+                
+                <Control xsi:type="Button" id="TaskpaneButton">
+                  <Label resid="TaskpaneButton.Label"/>
                   <Supertip>
-                    <Title resid="Button.Label"/>
-                    <Description resid="Button.Tooltip"/>
+                    <Title resid="TaskpaneButton.Label"/>
+                    <Description resid="TaskpaneButton.Tooltip"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -52,8 +63,8 @@
                     <bt:Image size="80" resid="Icon.80x80"/>
                   </Icon>
                   <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>ButtonTaskPaneId</TaskpaneId>
-                    <SourceLocation resid="TaskPane.Url"/>
+                    <TaskpaneId>ButtonId1</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
               </Group>
@@ -62,6 +73,7 @@
         </DesktopFormFactor>
       </Host>
     </Hosts>
+    
     <Resources>
       <bt:Images>
         <bt:Image id="Icon.16x16" DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-16.png"/>
@@ -69,17 +81,17 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="TaskPane.Url" DefaultValue="https://drrootbro.github.io/word-ai-assistant/taskpane.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://drrootbro.github.io/word-ai-assistant/taskpane.html"/>
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://drrootbro.github.io/word-ai-assistant/"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="Group.Label" DefaultValue="BYOK AI Assistant"/>
-        <bt:String id="Button.Label" DefaultValue="BYOK AI"/>
-        <bt:String id="GetStarted.Title" DefaultValue="BYOK AI Assistant"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="BYOK AI"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="BYOK AI"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Get started"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="Button.Tooltip" DefaultValue="Open BYOK AI assistant taskpane"/>
-        <bt:String id="GetStarted.Description" DefaultValue="Use your own API key to generate, rewrite, and translate content."/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Click to open BYOK AI assistant"/>
+        <bt:String id="GetStarted.Description" DefaultValue="Your BYOK AI assistant loaded successfully. Click the button on the ribbon to get started."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
