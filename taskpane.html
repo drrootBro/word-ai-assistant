@@ -275,19 +275,43 @@ function updateTrialStatus() {
     const daysLeft = TRIAL_DAYS - daysUsed;
 
     if (daysLeft > 0) {
+        // Trial active
         el.className = "status success";
         el.style.display = "block";
         el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
 
-        cta.style.display = "none";   // hide upgrade CTA
+        // Show CTA even during trial
+        cta.style.display = "block";
+        cta.innerHTML = `
+            ⭐ Want lifetime premium early?<br>
+            <button id="earlyPayBtn" class="cta-btn">Unlock Premium Now</button>
+        `;
+
+        // Bind button
+        setTimeout(() => {
+            const btn = document.getElementById("earlyPayBtn");
+            if (btn) btn.addEventListener("click", openPaymentPage);
+        }, 50);
+
     } else {
+        // Trial ended
         el.className = "status error";
         el.style.display = "block";
         el.textContent = "🔴 Free trial ended — upgrade required";
 
-        cta.style.display = "block";  // show upgrade CTA
+        cta.style.display = "block";
+        cta.innerHTML = `
+            ⭐ Lifetime premium unlock available<br>
+            <button id="earlyPayBtn" class="cta-btn">Unlock Premium Now</button>
+        `;
+
+        setTimeout(() => {
+            const btn = document.getElementById("earlyPayBtn");
+            if (btn) btn.addEventListener("click", openPaymentPage);
+        }, 50);
     }
 }
+
 
 /*************************************************************
  * Model Config — Gemini 2.0 Flash
@@ -570,6 +594,12 @@ function showStatus(id, msg, type) {
         setTimeout(() => { el.style.display = "none"; }, 3500);
     }
 }
+    
+function openPaymentPage() {
+    // 🚨 之后我会帮你换成 Lemon Squeezy checkout URL
+    window.open("https://your-checkout-url-here.com", "_blank");
+}
+
 </script>
 </body>
 </html>
