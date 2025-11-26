@@ -179,7 +179,27 @@
             <button class="btn-secondary" data-action="expand">📈 Expand</button>
             <button class="btn-secondary" data-action="format">✨ Format</button>
         </div>
-
+        <div class="section">
+            <div class="section-title">🌍 Translate Text</div>
+            <div class="info-text">✨ Highlight text first</div>
+        
+            <select id="translateLang">
+                <option value="zh">Chinese 中文</option>
+                <option value="es">Spanish Español</option>
+                <option value="ja">Japanese 日本語</option>
+                <option value="de">German Deutsch</option>
+                <option value="fr">French Français</option>
+                <option value="pt">Portuguese Português</option>
+                <option value="ko">Korean 한국어</option>
+                <option value="hi">Hindi हिन्दी</option>
+                <option value="it">Italian Italiano</option>
+                <option value="ru">Russian Русский</option>
+            </select>
+        
+            <button class="btn-secondary" onclick="translateSelected()">🌍 Translate Selected</button>
+        
+            <div id="translateStatus" class="status"></div>
+        </div>
         <textarea id="customInstruction" placeholder="Or enter custom instruction..."></textarea>
 
         <button class="btn-primary" id="runCustomBtn">🚀 Run on Selected</button>
@@ -451,6 +471,47 @@ async function editPreset(action) {
     } catch (err) {
         console.error(err);
         showStatus("editStatus", "❌ " + err.message, "error");
+    }
+}
+async function translateSelected() {
+    const model = document.getElementById("modelSelect").value;
+    const apiKey = localStorage.getItem(`apiKey_${model}`);
+    const lang = document.getElementById("translateLang").value;
+
+    if (!apiKey) {
+        showStatus("translateStatus", "⚠️ Save your API key first", "error");
+        return;
+    }
+
+    try {
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            selection.load("text");
+            await context.sync();
+
+            if (!selection.text.trim()) {
+                showStatus("translateStatus", "⚠️ Select text first", "error");
+                return;
+            }
+
+            const prompt = `
+Translate the following text into ${lang}.
+Return ONLY the translated text.
+
+Text:
+${selection.text.trim()}
+            `;
+
+            const result = await callAI(model, apiKey, prompt);
+
+            selection.insertText(result, Word.InsertLocation.replace);
+            await context.sync();
+
+            showStatus("translateStatus", "✅ Translated!", "success");
+        });
+    } catch (err) {
+        console.error(err);
+        showStatus("translateStatus", "❌ " + err.message, "error");
     }
 }
 
