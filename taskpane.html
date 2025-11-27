@@ -238,9 +238,36 @@ Office.onReady(() => {
 });
 
 /*************************************************************
- * Step 1 — Email + Trial
+ * Step 1 — Email + Trial + Lemon Squeezy Purchase
  *************************************************************/
 const TRIAL_DAYS = 5;
+
+// Lemon checkout link
+const LS_CHECKOUT_URL =
+    "https://ai-office-addins.lemonsqueezy.com/buy/6b60bcc8-c9e2-4fcf-a1d7-4137e19845a5";
+
+function openLsCheckout() {
+    let email = localStorage.getItem("byok_user_email");
+
+    // If email not saved, try reading input
+    if (!email) {
+        const input = document.getElementById("userEmailInput");
+        if (input) email = input.value.trim();
+    }
+
+    if (!email || !email.includes("@")) {
+        alert("Please enter your email first so we can activate your license after purchase.");
+        return;
+    }
+
+    localStorage.setItem("byok_user_email", email);
+
+    // Pre-fill email to Lemon checkout
+    const finalUrl =
+        `${LS_CHECKOUT_URL}?checkout[email]=${encodeURIComponent(email)}`;
+
+    window.open(finalUrl, "_blank");
+}
 
 function initUserEmailAndTrial() {
     console.log("Initialize Email + Trial");
@@ -272,10 +299,8 @@ function saveUserEmail() {
     localStorage.setItem("byok_user_email", email);
     updateEmailDisplay(email);
 
-    // Show success in its own box (not overwrite trialStatus)
     showStatus("saveStatus", "✅ Email saved", "success");
 
-    // Re-render trial UI
     updateTrialStatus();
 }
 
@@ -283,7 +308,9 @@ function updateEmailDisplay(email) {
     document.getElementById("emailDisplay").textContent = `Using email: ${email}`;
 }
 
-/** Trial countdown display */
+/*************************************************************
+ * Trial Status
+ *************************************************************/
 function updateTrialStatus() {
     const el = document.getElementById("trialStatus");
     const cta = document.getElementById("premiumCTA");
@@ -300,19 +327,13 @@ function updateTrialStatus() {
         el.style.display = "block";
         el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
 
-        // Show CTA even during trial
         cta.style.display = "block";
         cta.innerHTML = `
-            ⭐ Want lifetime premium early?<br>
-            <button id="earlyPayBtn" class="cta-btn">Unlock Premium Now</button>
+            ⭐ Enjoying your free trial?<br>
+            <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+                🔒 Buy lifetime license – $19.90
+            </button>
         `;
-
-        // Bind button
-        setTimeout(() => {
-            const btn = document.getElementById("earlyPayBtn");
-            if (btn) btn.addEventListener("click", openPaymentPage);
-        }, 50);
-
     } else {
         // Trial ended
         el.className = "status error";
@@ -322,16 +343,18 @@ function updateTrialStatus() {
         cta.style.display = "block";
         cta.innerHTML = `
             ⭐ Lifetime premium unlock available<br>
-            <button id="earlyPayBtn" class="cta-btn">Unlock Premium Now</button>
+            <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+                🔒 Buy lifetime license – $19.90
+            </button>
         `;
-
-        setTimeout(() => {
-            const btn = document.getElementById("earlyPayBtn");
-            if (btn) btn.addEventListener("click", openPaymentPage);
-        }, 50);
     }
-}
 
+    // Bind purchase button
+    setTimeout(() => {
+        const btn = document.getElementById("buyButton");
+        if (btn) btn.addEventListener("click", openLsCheckout);
+    }, 0);
+}
 
 /*************************************************************
  * Model Config — Gemini 2.0 Flash
@@ -473,6 +496,10 @@ async function editPreset(action) {
         showStatus("editStatus", "❌ " + err.message, "error");
     }
 }
+
+/*************************************************************
+ * Translate Selected
+ *************************************************************/
 async function translateSelected() {
     const model = document.getElementById("modelSelect").value;
     const apiKey = localStorage.getItem(`apiKey_${model}`);
@@ -516,7 +543,7 @@ ${selection.text.trim()}
 }
 
 /*************************************************************
- * Edit — Custom instruction
+ * Custom Instruction
  *************************************************************/
 async function runCustom() {
     const instruction = document.getElementById("customInstruction").value.trim();
@@ -559,7 +586,7 @@ async function runCustom() {
 }
 
 /*************************************************************
- * AI API Logic — Gemini 2.0 Flash
+ * AI API — Gemini 2.0 Flash / GPT-4o / Claude
  *************************************************************/
 async function callAI(model, apiKey, prompt) {
     const cfg = modelConfig[model];
@@ -571,11 +598,7 @@ async function callAI(model, apiKey, prompt) {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [
-                    {
-                        parts: [{ text: prompt }]
-                    }
-                ]
+                contents: [{ parts: [{ text: prompt }] }]
             })
         });
 
@@ -585,7 +608,7 @@ async function callAI(model, apiKey, prompt) {
         return data.candidates[0].content.parts[0].text;
     }
 
-    // --- OpenAI ---
+    // --- OpenAI GPT-4o ---
     if (model === "openai") {
         const res = await fetch(cfg.endpoint, {
             method: "POST",
@@ -605,7 +628,7 @@ async function callAI(model, apiKey, prompt) {
         return data.choices[0].message.content;
     }
 
-    // --- Claude ---
+    // --- Claude 3.5 Sonnet ---
     if (model === "claude") {
         const res = await fetch(cfg.endpoint, {
             method: "POST",
@@ -631,7 +654,7 @@ async function callAI(model, apiKey, prompt) {
 }
 
 /*************************************************************
- * Insert text to Word
+ * Insert text into Word
  *************************************************************/
 async function insertText(text) {
     await Word.run(async (context) => {
@@ -650,17 +673,12 @@ function showStatus(id, msg, type) {
     el.className = `status ${type}`;
     el.style.display = "block";
 
-    // Only auto-hide non-trial messages
     if (id !== "trialStatus") {
         setTimeout(() => { el.style.display = "none"; }, 3500);
     }
 }
-    
-function openPaymentPage() {
-    // 🚨 之后我会帮你换成 Lemon Squeezy checkout URL
-    window.open("https://your-checkout-url-here.com", "_blank");
-}
-
 </script>
 </body>
 </html>
+
+
