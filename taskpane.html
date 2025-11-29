@@ -143,66 +143,67 @@
 </head>
 
 <body>
-    <h1>BYOK AI Assistant for Word</h1>
+    <h1>BYOK AI Assistant</h1>
 
     <!-- 👤 Account & Trial -->
     <div class="section" id="accountSection">
-        
-        <div id="premiumStatusDisplay" style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="section-title">👤 Account Status</div>
-            
-            <button id="toggleManagement" class="btn-secondary" style="width: auto; padding: 4px 8px; font-size: 11px; margin: 0; display: none;">
+    
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div id="premiumStatus" style="font-size:14px;font-weight:600;color:#2e7d32;">
+                🔥 Premium activated (Lifetime)
+            </div>
+    
+            <button id="toggleManagement" class="btn-secondary" 
+                style="width:auto;padding:4px 8px;font-size:11px;margin:0;display:none;">
                 ⚙️ Manage
             </button>
         </div>
-        
-        <div id="premiumStatus" style="margin-top: 5px; font-weight: bold; color: #2e7d32; font-size: 14px;"></div>
-        
-        <div id="licenseManagementArea">
-            <div class="section-title" style="margin-top: 15px;">Email & Trial Details</div>
     
-            <input type="email" id="userEmailInput" placeholder="Enter your email (for license)…" />
+        <div id="licenseManagementArea" class="collapsed">
+            <input type="email" id="userEmailInput" placeholder="Enter your email…"/>
             <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
     
             <div class="info-text" id="emailDisplay">Not saved yet.</div>
-    
             <div class="status" id="trialStatus"></div>
-    
-            <div id="premiumCTA" style="margin-top: 10px;">
-            </div>
+            <div id="premiumCTA" style="margin-top:10px;"></div>
         </div>
-    </div>    
+    </div>
+
     
     <!-- 🔑 API -->
     <div class="section">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="section-title">🔑 AI Model & Key</div>
-            
-            <button id="toggleApiKeyManagement" class="btn-secondary" style="width: auto; padding: 4px 8px; font-size: 11px; margin: 0; display: none;">
+    
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div id="apiKeySavedStatus" style="font-size:14px;font-weight:600;color:#333;">
+                🔑 API Key Saved
+            </div>
+    
+            <button id="toggleApiKeyManagement" class="btn-secondary"
+                style="width:auto;padding:4px 8px;font-size:11px;margin:0;display:none;">
                 ⚙️ Manage
             </button>
         </div>
-        
-        <div id="apiKeySavedStatus" style="margin-top: 5px; font-weight: bold; color: #333; font-size: 14px;"></div>
     
-        <div id="apiKeyManagementArea">
-            <label for="modelSelect">Select AI Model:</label>
+        <div id="apiKeyManagementArea" class="collapsed">
+    
+            <label for="modelSelect" style="font-size:13px;font-weight:500;margin-top:10px;">Model</label>
             <select id="modelSelect">
                 <option value="gemini">Google Gemini 2.0 Flash</option>
                 <option value="openai">OpenAI GPT-4o</option>
-                <option value="claude">Anthropic Claude 3.5 Sonnet</option>
+                <option value="claude">Claude 3.5 Sonnet</option>
             </select>
-            
-            <label for="apiKeyInput" id="apiKeyLabel"></label>
-            <input type="password" id="apiKeyInput" placeholder="Paste your API key here…" />
-            
-            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
-                <a href="#" target="_blank" id="getKeyLink" class="link" style="margin-top: 0;"></a>
-                <button class="btn-primary" id="saveApiKeyBtn" style="margin-top: 0;">💾 Save Key</button>
+    
+            <label id="apiKeyLabel"></label>
+            <input type="password" id="apiKeyInput" placeholder="Paste your API key…"/>
+    
+            <div style="display:flex;justify-content:space-between;margin-top:10px;">
+                <a href="#" target="_blank" id="getKeyLink" class="link"></a>
+                <button class="btn-primary" id="saveApiKeyBtn">💾 Save Key</button>
             </div>
-            
-            <div class="status" id="saveStatus" style="margin-top: 10px;"></div>
+    
+            <div class="status" id="saveStatus"></div>
         </div>
+    
     </div>
     <!-- ✨ Generate -->
     <div class="section">
