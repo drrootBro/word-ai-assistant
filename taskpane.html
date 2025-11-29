@@ -264,7 +264,7 @@ function openLsCheckout() {
 
     // Pre-fill email to Lemon checkout
     const finalUrl =
-        `${LS_CHECKOUT_URL}?checkout[email]=${encodeURIComponent(email)}`;
+        `${LS_CHECKOUT_URL}?checkout[customer_email]=${encodeURIComponent(email)}`;
 
     window.open(finalUrl, "_blank");
 }
