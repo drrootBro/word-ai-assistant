@@ -10,7 +10,7 @@
   <ProviderName>RootBro</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="AI-Draft: BYOK AI Assistant for Word"/>
+  <DisplayName DefaultValue="AI-Draft: BYOK AI Assistant"/>
   <Description DefaultValue="A clean, fast BYOK AI assistant for Word. No subscription, lifetime use." />
 
   <!-- Icons still hosted on GitHub -->
