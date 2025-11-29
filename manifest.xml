@@ -10,14 +10,13 @@
   <ProviderName>RootBro</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="AI-Draft: AI Assistant"/>
+  <!-- Clean product name for Word ribbon title -->
+  <DisplayName DefaultValue="AI-Draft"/>
   <Description DefaultValue="A clean, fast BYOK AI assistant for Word. No subscription, lifetime use." />
 
-  <!-- Icons still hosted on GitHub -->
   <IconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-32.png"/>
   <HighResolutionIconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-80.png"/>
 
-  <!-- Updated Support URL -->
   <SupportUrl DefaultValue="https://rootbro.com/ai-draft/support.html"/>
 
   <Hosts>
@@ -31,7 +30,6 @@
   </Requirements>
 
   <DefaultSettings>
-    <!-- Taskpane stays hosted on GitHub Pages -->
     <SourceLocation DefaultValue="https://drrootbro.github.io/word-ai-assistant/taskpane.html"/>
   </DefaultSettings>
 
@@ -94,16 +92,13 @@
       </bt:Images>
 
       <bt:Urls>
-        <!-- Taskpane still on GitHub -->
         <bt:Url id="Taskpane.Url" DefaultValue="https://drrootbro.github.io/word-ai-assistant/taskpane.html"/>
-
-        <!-- Learn More uses your new site -->
         <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://rootbro.com/ai-draft/"/>
       </bt:Urls>
 
       <bt:ShortStrings>
         <bt:String id="CommandsGroup.Label" DefaultValue="AI-Draft"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="AI-tools"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="AI Tools"/>
         <bt:String id="GetStarted.Title" DefaultValue="AI-Draft Installed"/>
       </bt:ShortStrings>
 
