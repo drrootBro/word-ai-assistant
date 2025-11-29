@@ -144,26 +144,25 @@
 
     <!-- 👤 Account & Trial -->
     <div class="section" id="accountSection">
-        <div class="section-title">👤 Account & Trial</div>
-
-        <input type="email" id="userEmailInput" placeholder="Enter your email (for license)…" />
-        <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
-
-        <div class="info-text" id="emailDisplay">Not saved yet.</div>
-
-        <!-- Trial -->
-        <div class="status" id="trialStatus"></div>
-
-        <!-- CTA appears only when trial ends -->
-        <div id="premiumCTA" style="display:none;">
-            ⭐ Lifetime premium unlock available.
-            <a href="#" id="upgradeLink">Upgrade now</a>
+        <div id="premiumStatusDisplay">
+            <div class="section-title">👤 Account Status</div>
+            <div id="premiumStatus" style="margin-top: 10px; font-weight: bold; color: #2e7d32; font-size: 14px;"></div>
         </div>
-        <div id="premiumStatus" style="margin-top: 10px; font-weight: bold;"></div>
-        <div id="premiumCTA" style="margin-top: 10px;"></div>
-
-    </div>
-
+        
+        <div id="licenseManagementArea">
+            <div class="section-title">Email & Trial</div>
+    
+            <input type="email" id="userEmailInput" placeholder="Enter your email (for license)…" />
+            <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
+    
+            <div class="info-text" id="emailDisplay">Not saved yet.</div>
+    
+            <div class="status" id="trialStatus"></div>
+    
+            <div id="premiumCTA" style="margin-top: 10px;">
+            </div>
+        </div>
+    </div>  
     <!-- 🔑 API -->
     <div class="section">
         <select id="modelSelect">
@@ -745,36 +744,44 @@ ${selection.text.trim()}
     // =================================
     async function checkLicenseAndUpdateUI() {
         const email = localStorage.getItem("byok_user_email");
-
+        const statusEl = document.getElementById("premiumStatus");
+        const manageEl = document.getElementById("licenseManagementArea"); // 新增：许可证管理区
+        const ctaEl = document.getElementById("premiumCTA");
+    
         if (!email) {
             console.log("No email saved yet, skip license check.");
+            // 如果没有 email，确保显示管理区
+            if (manageEl) manageEl.style.display = 'block';
+            if (statusEl) statusEl.textContent = "🔒 Please enter your email";
             return;
         }
-
+    
         const result = await callCheckLicense(email);
         console.log("🔍 License result:", result);
-
-        const statusEl = document.getElementById("premiumStatus");
-        const ctaEl = document.getElementById("premiumCTA");
-
+    
         if (result.active === true) {
             // Premium 已激活
-            isPremiumActive = true; // ⭐ 设置全局变量
+            isPremiumActive = true; 
+            
+            // 1. 显示激活状态
             if (statusEl) statusEl.textContent = "🔥 Premium activated (Lifetime)";
-            if (ctaEl) ctaEl.style.display = "none";
-
-            // 重新运行试用状态，这次会被 isPremiumActive 阻止显示试用到期信息
+            
+            // 2. 隐藏输入、试用和购买区
+            if (manageEl) manageEl.style.display = 'none'; 
+            
+            // 重新运行试用状态（虽然它现在会被 isPremiumActive 阻止）
             updateTrialStatus();
             
-            // 如果有 premium 功能要解锁，可以在这里调用：
-            // unlockPremiumFunctions?.(); 
         } else {
-            // 未激活
-            isPremiumActive = false; // ⭐ 设置全局变量
+            // 未激活或试用中
+            isPremiumActive = false; 
+            
+            // 1. 显示未激活/试用状态
             if (statusEl) statusEl.textContent = "🔒 Free trial / Upgrade required";
-            if (ctaEl) ctaEl.style.display = "block";
-
-            // 重新运行试用状态，显示剩余天数或到期信息
+            
+            // 2. 显示输入、试用和购买区
+            if (manageEl) manageEl.style.display = 'block'; 
+            
             updateTrialStatus();
         }
     }
