@@ -235,322 +235,336 @@
 
         <div id="editStatus" class="status"></div>
     </div>
-    <script>
-        /*************************************************************
-         * Office Initialization
-         *************************************************************/
-        Office.onReady(() => {
-            console.log("Office ready.");
+<script>
+    /*************************************************************
+     * Office Initialization
+     *************************************************************/
+    let isPremiumActive = false; // 全局变量，用于标记付费状态
 
-            document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
-            document.getElementById("generateBtn").addEventListener("click", generateContent);
+    Office.onReady(() => {
+        console.log("Office ready.");
 
-            document.getElementById("modelSelect").addEventListener("change", () => {
-                updateApiKeyLabel();
-                updateGetKeyLink();
-            });
+        // 按钮绑定
+        document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
+        document.getElementById("generateBtn").addEventListener("click", generateContent);
 
-            // Preset edit buttons
-            document.querySelectorAll("[data-action]").forEach(btn => {
-                btn.addEventListener("click", () => editPreset(btn.dataset.action));
-            });
-
-            // Custom instruction button
-            document.getElementById("runCustomBtn").addEventListener("click", runCustom);
-
-            // Email / Trial init
-            document.getElementById("saveEmailBtn").addEventListener("click", saveUserEmail);
-
-            initUserEmailAndTrial();
+        document.getElementById("modelSelect").addEventListener("change", () => {
             updateApiKeyLabel();
             updateGetKeyLink();
         });
 
-        /*************************************************************
-         * Step 1 — Email + Trial + Lemon Squeezy Purchase
-         *************************************************************/
-        const TRIAL_DAYS = 5;
+        // Preset edit buttons
+        document.querySelectorAll("[data-action]").forEach(btn => {
+            btn.addEventListener("click", () => editPreset(btn.dataset.action));
+        });
 
-        // Lemon checkout link
-        const LS_CHECKOUT_URL =
-            "https://ai-office-addins.lemonsqueezy.com/buy/6b60bcc8-c9e2-4fcf-a1d7-4137e19845a5";
+        // Custom instruction button
+        document.getElementById("runCustomBtn").addEventListener("click", runCustom);
 
-        function openLsCheckout() {
-            let email = localStorage.getItem("byok_user_email");
+        // Email / Trial / License init
+        document.getElementById("saveEmailBtn").addEventListener("click", saveUserEmail);
 
-            // If email not saved, try reading input
-            if (!email) {
-                const input = document.getElementById("userEmailInput");
-                if (input) email = input.value.trim();
-            }
+        // 初始化和许可证检查
+        initUserEmailAndTrial();
+        updateApiKeyLabel();
+        updateGetKeyLink();
+        
+        // ⭐ 启动时立即检查许可证
+        checkLicenseAndUpdateUI(); 
+    });
 
-            if (!email || !email.includes("@")) {
-                alert("Please enter your email first so we can activate your license after purchase.");
-                return;
-            }
+    /*************************************************************
+     * Step 1 — Email + Trial + Lemon Squeezy Purchase
+     *************************************************************/
+    const TRIAL_DAYS = 5;
 
-            localStorage.setItem("byok_user_email", email);
+    // Lemon checkout link
+    const LS_CHECKOUT_URL =
+        "https://ai-office-addins.lemonsqueezy.com/buy/6b60bcc8-c9e2-4fcf-a1d7-4137e19845a5";
 
-            // Pre-fill email to Lemon checkout
-            const finalUrl =
-                `${LS_CHECKOUT_URL}?checkout[customer_email]=${encodeURIComponent(email)}`;
+    function openLsCheckout() {
+        let email = localStorage.getItem("byok_user_email");
 
-            window.open(finalUrl, "_blank");
+        // If email not saved, try reading input
+        if (!email) {
+            const input = document.getElementById("userEmailInput");
+            if (input) email = input.value.trim();
         }
 
-        function initUserEmailAndTrial() {
-            console.log("Initialize Email + Trial");
-
-            const savedEmail = localStorage.getItem("byok_user_email");
-            if (savedEmail) {
-                document.getElementById("userEmailInput").value = savedEmail;
-                updateEmailDisplay(savedEmail);
-            }
-
-            let start = localStorage.getItem("byok_trial_start");
-            if (!start) {
-                start = Date.now().toString();
-                localStorage.setItem("byok_trial_start", start);
-            }
-
-            updateTrialStatus();
+        if (!email || !email.includes("@")) {
+            alert("Please enter your email first so we can activate your license after purchase.");
+            return;
         }
 
-        function saveUserEmail() {
-            const emailInput = document.getElementById("userEmailInput");
-            const email = emailInput.value.trim();
+        localStorage.setItem("byok_user_email", email);
 
-            if (!email || !email.includes("@")) {
-                showStatus("saveStatus", "⚠️ Please enter a valid email", "error");
-                return;
-            }
+        // Pre-fill email to Lemon checkout
+        const finalUrl =
+            `${LS_CHECKOUT_URL}?checkout[customer_email]=${encodeURIComponent(email)}`;
 
-            localStorage.setItem("byok_user_email", email);
-            updateEmailDisplay(email);
+        window.open(finalUrl, "_blank");
+    }
 
-            showStatus("saveStatus", "✅ Email saved", "success");
+    function initUserEmailAndTrial() {
+        console.log("Initialize Email + Trial");
 
-            updateTrialStatus();
+        const savedEmail = localStorage.getItem("byok_user_email");
+        if (savedEmail) {
+            document.getElementById("userEmailInput").value = savedEmail;
+            updateEmailDisplay(savedEmail);
         }
 
-        function updateEmailDisplay(email) {
-            document.getElementById("emailDisplay").textContent = `Using email: ${email}`;
+        let start = localStorage.getItem("byok_trial_start");
+        if (!start) {
+            start = Date.now().toString();
+            localStorage.setItem("byok_trial_start", start);
         }
 
-        /*************************************************************
-         * Trial Status
-         *************************************************************/
-        function updateTrialStatus() {
-            const el = document.getElementById("trialStatus");
-            const cta = document.getElementById("premiumCTA");
+        updateTrialStatus();
+    }
 
-            const start = Number(localStorage.getItem("byok_trial_start") || Date.now());
-            const now = Date.now();
+    function saveUserEmail() {
+        const emailInput = document.getElementById("userEmailInput");
+        const email = emailInput.value.trim();
 
-            const daysUsed = Math.floor((now - start) / (24 * 3600 * 1000));
-            const daysLeft = TRIAL_DAYS - daysUsed;
-
-            if (daysLeft > 0) {
-                // Trial active
-                el.className = "status success";
-                el.style.display = "block";
-                el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
-
-                cta.style.display = "block";
-                cta.innerHTML = `
-            ⭐ Enjoying your free trial?<br>
-            <button id="buyButton" class="btn-primary" style="margin-top:8px;">
-                🔒 Buy lifetime license – $19.90
-            </button>
-        `;
-            } else {
-                // Trial ended
-                el.className = "status error";
-                el.style.display = "block";
-                el.textContent = "🔴 Free trial ended — upgrade required";
-
-                cta.style.display = "block";
-                cta.innerHTML = `
-            ⭐ Lifetime premium unlock available<br>
-            <button id="buyButton" class="btn-primary" style="margin-top:8px;">
-                🔒 Buy lifetime license – $19.90
-            </button>
-        `;
-            }
-
-            // Bind purchase button
-            setTimeout(() => {
-                const btn = document.getElementById("buyButton");
-                if (btn) btn.addEventListener("click", openLsCheckout);
-            }, 0);
+        if (!email || !email.includes("@")) {
+            showStatus("saveStatus", "⚠️ Please enter a valid email", "error");
+            return;
         }
 
-        /*************************************************************
-         * Model Config — Gemini 2.0 Flash
-         *************************************************************/
-        const modelConfig = {
-            gemini: {
-                name: "Gemini API Key",
-                link: "https://aistudio.google.com/app/apikey",
-                endpoint:
-                    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
-            },
-            openai: {
-                name: "OpenAI API Key",
-                link: "https://platform.openai.com/api-keys",
-                endpoint: "https://api.openai.com/v1/chat/completions"
-            },
-            claude: {
-                name: "Anthropic API Key",
-                link: "https://console.anthropic.com/",
-                endpoint: "https://api.anthropic.com/v1/messages"
-            }
-        };
+        localStorage.setItem("byok_user_email", email);
+        updateEmailDisplay(email);
 
-        function updateApiKeyLabel() {
-            const model = document.getElementById("modelSelect").value;
-            const cfg = modelConfig[model];
-            document.getElementById("apiKeyLabel").textContent = cfg.name;
+        showStatus("saveStatus", "✅ Email saved", "success");
 
-            const saved = localStorage.getItem(`apiKey_${model}`);
-            document.getElementById("apiKeyInput").value = saved || "";
+        updateTrialStatus();
+        // ⭐ 关键修复 2: 保存邮箱后，立即检查许可证状态
+        checkLicenseAndUpdateUI(); 
+    }
+
+    function updateEmailDisplay(email) {
+        document.getElementById("emailDisplay").textContent = `Using email: ${email}`;
+    }
+
+    /*************************************************************
+     * Trial Status
+     *************************************************************/
+    function updateTrialStatus() {
+        // ⭐ 关键修复 3: 如果 isPremiumActive 为 true，则跳过试用状态的显示
+        if (isPremiumActive) {
+            return;
         }
 
-        function updateGetKeyLink() {
-            const model = document.getElementById("modelSelect").value;
-            const linkEl = document.getElementById("getKeyLink");
+        const el = document.getElementById("trialStatus");
+        const cta = document.getElementById("premiumCTA");
 
-            linkEl.style.display = "inline-block";
+        const start = Number(localStorage.getItem("byok_trial_start") || Date.now());
+        const now = Date.now();
 
-            if (model === "gemini") {
-                linkEl.href = modelConfig.gemini.link;
-                linkEl.textContent = "👉 Get free Gemini API key";
-            } else if (model === "openai") {
-                linkEl.href = modelConfig.openai.link;
-                linkEl.textContent = "👉 Get OpenAI API key";
-            } else {
-                linkEl.href = modelConfig.claude.link;
-                linkEl.textContent = "👉 Get Anthropic API key";
-            }
+        const daysUsed = Math.floor((now - start) / (24 * 3600 * 1000));
+        const daysLeft = TRIAL_DAYS - daysUsed;
+
+        if (daysLeft > 0) {
+            // Trial active
+            el.className = "status success";
+            el.style.display = "block";
+            el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
+
+            cta.style.display = "block";
+            cta.innerHTML = `
+        ⭐ Enjoying your free trial?<br>
+        <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+            🔒 Buy lifetime license – $19.90
+        </button>
+    `;
+        } else {
+            // Trial ended
+            el.className = "status error";
+            el.style.display = "block";
+            el.textContent = "🔴 Free trial ended — upgrade required";
+
+            cta.style.display = "block";
+            cta.innerHTML = `
+        ⭐ Lifetime premium unlock available<br>
+        <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+            🔒 Buy lifetime license – $19.90
+        </button>
+    `;
         }
 
-        function saveApiKey() {
-            const model = document.getElementById("modelSelect").value;
-            const key = document.getElementById("apiKeyInput").value.trim();
+        // Bind purchase button
+        setTimeout(() => {
+            const btn = document.getElementById("buyButton");
+            if (btn) btn.addEventListener("click", openLsCheckout);
+        }, 0);
+    }
 
-            if (!key) {
-                showStatus("saveStatus", "⚠️ Please enter an API key", "error");
-                return;
-            }
+    /*************************************************************
+     * Model Config — Gemini 2.0 Flash
+     *************************************************************/
+    const modelConfig = {
+        gemini: {
+            name: "Gemini API Key",
+            link: "https://aistudio.google.com/app/apikey",
+            endpoint:
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+        },
+        openai: {
+            name: "OpenAI API Key",
+            link: "https://platform.openai.com/api-keys",
+            endpoint: "https://api.openai.com/v1/chat/completions"
+        },
+        claude: {
+            name: "Anthropic API Key",
+            link: "https://console.anthropic.com/",
+            endpoint: "https://api.anthropic.com/v1/messages"
+        }
+    };
 
-            localStorage.setItem(`apiKey_${model}`, key);
-            showStatus("saveStatus", "API key saved! ✅", "success");
+    function updateApiKeyLabel() {
+        const model = document.getElementById("modelSelect").value;
+        const cfg = modelConfig[model];
+        document.getElementById("apiKeyLabel").textContent = cfg.name;
+
+        const saved = localStorage.getItem(`apiKey_${model}`);
+        document.getElementById("apiKeyInput").value = saved || "";
+    }
+
+    function updateGetKeyLink() {
+        const model = document.getElementById("modelSelect").value;
+        const linkEl = document.getElementById("getKeyLink");
+
+        linkEl.style.display = "inline-block";
+
+        if (model === "gemini") {
+            linkEl.href = modelConfig.gemini.link;
+            linkEl.textContent = "👉 Get free Gemini API key";
+        } else if (model === "openai") {
+            linkEl.href = modelConfig.openai.link;
+            linkEl.textContent = "👉 Get OpenAI API key";
+        } else {
+            linkEl.href = modelConfig.claude.link;
+            linkEl.textContent = "👉 Get Anthropic API key";
+        }
+    }
+
+    function saveApiKey() {
+        const model = document.getElementById("modelSelect").value;
+        const key = document.getElementById("apiKeyInput").value.trim();
+
+        if (!key) {
+            showStatus("saveStatus", "⚠️ Please enter an API key", "error");
+            return;
         }
 
-        /*************************************************************
-         * Generate Content
-         *************************************************************/
-        async function generateContent() {
-            const prompt = document.getElementById("promptInput").value.trim();
-            if (!prompt) {
-                showStatus("generateStatus", "⚠️ Please enter a prompt", "error");
-                return;
-            }
+        localStorage.setItem(`apiKey_${model}`, key);
+        showStatus("saveStatus", "API key saved! ✅", "success");
+    }
 
-            const model = document.getElementById("modelSelect").value;
-            const apiKey = localStorage.getItem(`apiKey_${model}`);
-            if (!apiKey) {
-                showStatus("generateStatus", "⚠️ Save your API key first", "error");
-                return;
-            }
-
-            const btn = document.getElementById("generateBtn");
-            btn.disabled = true;
-            btn.textContent = "⏳ Generating…";
-
-            try {
-                const result = await callAI(model, apiKey, prompt);
-                await insertText(result);
-                showStatus("generateStatus", "Inserted successfully! 🎉", "success");
-            } catch (err) {
-                console.error(err);
-                showStatus("generateStatus", "❌ " + err.message, "error");
-            } finally {
-                btn.disabled = false;
-                btn.textContent = "✨ Generate & Insert";
-            }
+    /*************************************************************
+     * Generate Content
+     *************************************************************/
+    async function generateContent() {
+        const prompt = document.getElementById("promptInput").value.trim();
+        if (!prompt) {
+            showStatus("generateStatus", "⚠️ Please enter a prompt", "error");
+            return;
         }
 
-        /*************************************************************
-         * Edit with preset prompts
-         *************************************************************/
-        async function editPreset(action) {
-            const model = document.getElementById("modelSelect").value;
-            const apiKey = localStorage.getItem(`apiKey_${model}`);
-
-            if (!apiKey) {
-                showStatus("editStatus", "⚠️ Save your API key first", "error");
-                return;
-            }
-
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    selection.load("text");
-                    await context.sync();
-
-                    const selectedText = selection.text.trim();
-                    if (!selectedText) {
-                        showStatus("editStatus", "⚠️ Select some text first", "error");
-                        return;
-                    }
-
-                    const prompts = {
-                        rewrite: `Rewrite this text clearly and professionally:\n\n${selectedText}`,
-                        summarize: `Summarize the following text:\n\n${selectedText}`,
-                        expand: `Expand on this text with more details:\n\n${selectedText}`,
-                        format: `Improve the formatting and clarity:\n\n${selectedText}`
-                    };
-
-                    const prompt = prompts[action];
-                    const response = await callAI(model, apiKey, prompt);
-
-                    selection.insertText(response, Word.InsertLocation.replace);
-                    await context.sync();
-
-                    showStatus("editStatus", "Done! 🎉", "success");
-                });
-            } catch (err) {
-                console.error(err);
-                showStatus("editStatus", "❌ " + err.message, "error");
-            }
+        const model = document.getElementById("modelSelect").value;
+        const apiKey = localStorage.getItem(`apiKey_${model}`);
+        if (!apiKey) {
+            showStatus("generateStatus", "⚠️ Save your API key first", "error");
+            return;
         }
 
-        /*************************************************************
-         * Translate Selected
-         *************************************************************/
-        async function translateSelected() {
-            const model = document.getElementById("modelSelect").value;
-            const apiKey = localStorage.getItem(`apiKey_${model}`);
-            const lang = document.getElementById("translateLang").value;
+        const btn = document.getElementById("generateBtn");
+        btn.disabled = true;
+        btn.textContent = "⏳ Generating…";
 
-            if (!apiKey) {
-                showStatus("translateStatus", "⚠️ Save your API key first", "error");
-                return;
-            }
+        try {
+            const result = await callAI(model, apiKey, prompt);
+            await insertText(result);
+            showStatus("generateStatus", "Inserted successfully! 🎉", "success");
+        } catch (err) {
+            console.error(err);
+            showStatus("generateStatus", "❌ " + err.message, "error");
+        } finally {
+            btn.disabled = false;
+            btn.textContent = "✨ Generate & Insert";
+        }
+    }
 
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    selection.load("text");
-                    await context.sync();
+    /*************************************************************
+     * Edit with preset prompts
+     *************************************************************/
+    async function editPreset(action) {
+        const model = document.getElementById("modelSelect").value;
+        const apiKey = localStorage.getItem(`apiKey_${model}`);
 
-                    if (!selection.text.trim()) {
-                        showStatus("translateStatus", "⚠️ Select text first", "error");
-                        return;
-                    }
+        if (!apiKey) {
+            showStatus("editStatus", "⚠️ Save your API key first", "error");
+            return;
+        }
 
-                    const prompt = `
+        try {
+            await Word.run(async (context) => {
+                const selection = context.document.getSelection();
+                selection.load("text");
+                await context.sync();
+
+                const selectedText = selection.text.trim();
+                if (!selectedText) {
+                    showStatus("editStatus", "⚠️ Select some text first", "error");
+                    return;
+                }
+
+                const prompts = {
+                    rewrite: `Rewrite this text clearly and professionally:\n\n${selectedText}`,
+                    summarize: `Summarize the following text:\n\n${selectedText}`,
+                    expand: `Expand on this text with more details:\n\n${selectedText}`,
+                    format: `Improve the formatting and clarity:\n\n${selectedText}`
+                };
+
+                const prompt = prompts[action];
+                const response = await callAI(model, apiKey, prompt);
+
+                selection.insertText(response, Word.InsertLocation.replace);
+                await context.sync();
+
+                showStatus("editStatus", "Done! 🎉", "success");
+            });
+        } catch (err) {
+            console.error(err);
+            showStatus("editStatus", "❌ " + err.message, "error");
+        }
+    }
+
+    /*************************************************************
+     * Translate Selected
+     *************************************************************/
+    async function translateSelected() {
+        const model = document.getElementById("modelSelect").value;
+        const apiKey = localStorage.getItem(`apiKey_${model}`);
+        const lang = document.getElementById("translateLang").value;
+
+        if (!apiKey) {
+            showStatus("translateStatus", "⚠️ Save your API key first", "error");
+            return;
+        }
+
+        try {
+            await Word.run(async (context) => {
+                const selection = context.document.getSelection();
+                selection.load("text");
+                await context.sync();
+
+                if (!selection.text.trim()) {
+                    showStatus("translateStatus", "⚠️ Select text first", "error");
+                    return;
+                }
+
+                const prompt = `
 Translate the following text into ${lang}.
 Return ONLY the translated text.
 
@@ -558,214 +572,213 @@ Text:
 ${selection.text.trim()}
             `;
 
-                    const result = await callAI(model, apiKey, prompt);
+                const result = await callAI(model, apiKey, prompt);
 
-                    selection.insertText(result, Word.InsertLocation.replace);
-                    await context.sync();
+                selection.insertText(result, Word.InsertLocation.replace);
+                await context.sync();
 
-                    showStatus("translateStatus", "✅ Translated!", "success");
-                });
-            } catch (err) {
-                console.error(err);
-                showStatus("translateStatus", "❌ " + err.message, "error");
-            }
+                showStatus("translateStatus", "✅ Translated!", "success");
+            });
+        } catch (err) {
+            console.error(err);
+            showStatus("translateStatus", "❌ " + err.message, "error");
+        }
+    }
+
+    /*************************************************************
+     * Custom Instruction
+     *************************************************************/
+    async function runCustom() {
+        const instruction = document.getElementById("customInstruction").value.trim();
+        if (!instruction) {
+            showStatus("editStatus", "⚠️ Enter a custom instruction", "error");
+            return;
         }
 
-        /*************************************************************
-         * Custom Instruction
-         *************************************************************/
-        async function runCustom() {
-            const instruction = document.getElementById("customInstruction").value.trim();
-            if (!instruction) {
-                showStatus("editStatus", "⚠️ Enter a custom instruction", "error");
-                return;
-            }
-
-            const model = document.getElementById("modelSelect").value;
-            const apiKey = localStorage.getItem(`apiKey_${model}`);
-            if (!apiKey) {
-                showStatus("editStatus", "⚠️ Save your API key first", "error");
-                return;
-            }
-
-            try {
-                await Word.run(async (context) => {
-                    const selection = context.document.getSelection();
-                    selection.load("text");
-                    await context.sync();
-
-                    const selected = selection.text.trim();
-                    if (!selected) {
-                        showStatus("editStatus", "⚠️ Select text first", "error");
-                        return;
-                    }
-
-                    const prompt = `${instruction}\n\nText:\n${selected}`;
-                    const output = await callAI(model, apiKey, prompt);
-
-                    selection.insertText(output, Word.InsertLocation.replace);
-                    await context.sync();
-
-                    showStatus("editStatus", "✅ Custom applied!", "success");
-                });
-            } catch (err) {
-                console.error(err);
-                showStatus("editStatus", "❌ " + err.message, "error");
-            }
+        const model = document.getElementById("modelSelect").value;
+        const apiKey = localStorage.getItem(`apiKey_${model}`);
+        if (!apiKey) {
+            showStatus("editStatus", "⚠️ Save your API key first", "error");
+            return;
         }
 
-        /*************************************************************
-         * AI API — Gemini 2.0 Flash / GPT-4o / Claude
-         *************************************************************/
-        async function callAI(model, apiKey, prompt) {
-            const cfg = modelConfig[model];
-
-            // --- Gemini 2.0 Flash ---
-            if (model === "gemini") {
-                const url = `${cfg.endpoint}?key=${apiKey}`;
-                const res = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "Gemini Error");
-
-                return data.candidates[0].content.parts[0].text;
-            }
-
-            // --- OpenAI GPT-4o ---
-            if (model === "openai") {
-                const res = await fetch(cfg.endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-4o",
-                        messages: [{ role: "user", content: prompt }]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "OpenAI Error");
-
-                return data.choices[0].message.content;
-            }
-
-            // --- Claude 3.5 Sonnet ---
-            if (model === "claude") {
-                const res = await fetch(cfg.endpoint, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "x-api-key": apiKey,
-                        "anthropic-version": "2023-06-01"
-                    },
-                    body: JSON.stringify({
-                        model: "claude-3-5-sonnet-20241022",
-                        max_tokens: 2000,
-                        messages: [{ role: "user", content: prompt }]
-                    })
-                });
-
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error?.message || "Claude Error");
-
-                return data.content[0].text;
-            }
-
-            throw new Error("Model not implemented.");
-        }
-
-        /*************************************************************
-         * Insert text into Word
-         *************************************************************/
-        async function insertText(text) {
+        try {
             await Word.run(async (context) => {
                 const selection = context.document.getSelection();
-                selection.insertText(text, Word.InsertLocation.end);
+                selection.load("text");
                 await context.sync();
+
+                const selected = selection.text.trim();
+                if (!selected) {
+                    showStatus("editStatus", "⚠️ Select text first", "error");
+                    return;
+                }
+
+                const prompt = `${instruction}\n\nText:\n${selected}`;
+                const output = await callAI(model, apiKey, prompt);
+
+                selection.insertText(output, Word.InsertLocation.replace);
+                await context.sync();
+
+                showStatus("editStatus", "✅ Custom applied!", "success");
             });
+        } catch (err) {
+            console.error(err);
+            showStatus("editStatus", "❌ " + err.message, "error");
+        }
+    }
+
+    /*************************************************************
+     * AI API — Gemini 2.0 Flash / GPT-4o / Claude
+     *************************************************************/
+    async function callAI(model, apiKey, prompt) {
+        const cfg = modelConfig[model];
+
+        // --- Gemini 2.0 Flash ---
+        if (model === "gemini") {
+            const url = `${cfg.endpoint}?key=${apiKey}`;
+            const res = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Gemini Error");
+
+            return data.candidates[0].content.parts[0].text;
         }
 
-        /*************************************************************
-         * Status helper
-         *************************************************************/
-        function showStatus(id, msg, type) {
-            const el = document.getElementById(id);
-            el.textContent = msg;
-            el.className = `status ${type}`;
-            el.style.display = "block";
+        // --- OpenAI GPT-4o ---
+        if (model === "openai") {
+            const res = await fetch(cfg.endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
 
-            if (id !== "trialStatus") {
-                setTimeout(() => { el.style.display = "none"; }, 3500);
-            }
-        }
-    </script>
-    <script>
-        // Cloud Run License Check URL
-        const CHECK_LICENSE_URL = "https://checklicense-h5obtbbyra-uc.a.run.app";
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "OpenAI Error");
 
-        // =============================
-        // 🔍 Call backend license check
-        // =============================
-        async function callCheckLicense(email) {
-            try {
-                const url = `${CHECK_LICENSE_URL}?email=${encodeURIComponent(email)}`;
-                const res = await fetch(url);
-                return await res.json();
-            } catch (err) {
-                console.error("License check failed:", err);
-                return { active: false };
-            }
+            return data.choices[0].message.content;
         }
 
-        // =================================
-        // 🔓 Update UI based on license
-        // =================================
-        async function checkLicenseAndUpdateUI() {
-            const email = localStorage.getItem("byok_user_email");
+        // --- Claude 3.5 Sonnet ---
+        if (model === "claude") {
+            const res = await fetch(cfg.endpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": apiKey,
+                    "anthropic-version": "2023-06-01"
+                },
+                body: JSON.stringify({
+                    model: "claude-3-5-sonnet-20241022",
+                    max_tokens: 2000,
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
 
-            if (!email) {
-                console.log("No email saved yet, skip license check.");
-                return;
-            }
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Claude Error");
 
-            const result = await callCheckLicense(email);
-            console.log("🔍 License result:", result);
-
-            const statusEl = document.getElementById("premiumStatus");
-            const ctaEl = document.getElementById("premiumCTA");
-
-            if (result.active === true) {
-                // Premium 已激活
-                if (statusEl) statusEl.textContent = "🔥 Premium activated";
-                if (ctaEl) ctaEl.style.display = "none";
-
-                // 如果有 premium 功能要解锁，可以在这里调用：
-                unlockPremiumFunctions?.();
-            } else {
-                // 未激活
-                if (statusEl) statusEl.textContent = "🔒 Free trial / Upgrade required";
-                if (ctaEl) ctaEl.style.display = "block";
-            }
+            return data.content[0].text;
         }
 
-        // =================================
-        // 🔄 启动插件时运行激活检查
-        // =================================
-        Office.onReady(() => {
-            console.log("Office ready → checking license");
-            initUserEmailAndTrial();    // 你已有的逻辑
-            checkLicenseAndUpdateUI();  // ← 加上这个
+        throw new Error("Model not implemented.");
+    }
+
+    /*************************************************************
+     * Insert text into Word
+     *************************************************************/
+    async function insertText(text) {
+        await Word.run(async (context) => {
+            const selection = context.document.getSelection();
+            selection.insertText(text, Word.InsertLocation.end);
+            await context.sync();
         });
-    </script>
+    }
 
+    /*************************************************************
+     * Status helper
+     *************************************************************/
+    function showStatus(id, msg, type) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.className = `status ${type}`;
+        el.style.display = "block";
+
+        if (id !== "trialStatus") {
+            setTimeout(() => { el.style.display = "none"; }, 3500);
+        }
+    }
+
+
+    // Cloud Run License Check URL (从底部移动到顶部，以便在主 <script> 中定义和使用)
+    const CHECK_LICENSE_URL = "https://checklicense-h5obtbbyra-uc.a.run.app";
+
+    // =============================
+    // 🔍 Call backend license check
+    // =============================
+    async function callCheckLicense(email) {
+        try {
+            const url = `${CHECK_LICENSE_URL}?email=${encodeURIComponent(email)}`;
+            // 🚨 注意：如果您使用了 Firebase Auth，这里可能还需要添加认证头，但目前只依赖于公网请求
+            const res = await fetch(url);
+            return await res.json();
+        } catch (err) {
+            console.error("License check failed:", err);
+            return { active: false };
+        }
+    }
+
+    // =================================
+    // 🔓 Update UI based on license
+    // =================================
+    async function checkLicenseAndUpdateUI() {
+        const email = localStorage.getItem("byok_user_email");
+
+        if (!email) {
+            console.log("No email saved yet, skip license check.");
+            return;
+        }
+
+        const result = await callCheckLicense(email);
+        console.log("🔍 License result:", result);
+
+        const statusEl = document.getElementById("premiumStatus");
+        const ctaEl = document.getElementById("premiumCTA");
+
+        if (result.active === true) {
+            // Premium 已激活
+            isPremiumActive = true; // ⭐ 设置全局变量
+            if (statusEl) statusEl.textContent = "🔥 Premium activated (Lifetime)";
+            if (ctaEl) ctaEl.style.display = "none";
+
+            // 重新运行试用状态，这次会被 isPremiumActive 阻止显示试用到期信息
+            updateTrialStatus();
+            
+            // 如果有 premium 功能要解锁，可以在这里调用：
+            // unlockPremiumFunctions?.(); 
+        } else {
+            // 未激活
+            isPremiumActive = false; // ⭐ 设置全局变量
+            if (statusEl) statusEl.textContent = "🔒 Free trial / Upgrade required";
+            if (ctaEl) ctaEl.style.display = "block";
+
+            // 重新运行试用状态，显示剩余天数或到期信息
+            updateTrialStatus();
+        }
+    }
+</script>
 </body>
 
 </html>
