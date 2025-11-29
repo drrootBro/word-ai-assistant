@@ -135,6 +135,8 @@
 
         a.link:hover {
             text-decoration: underline;
+            .collapsed {
+            display: none !important;
         }
     </style>
 </head>
@@ -144,13 +146,19 @@
 
     <!-- 👤 Account & Trial -->
     <div class="section" id="accountSection">
-        <div id="premiumStatusDisplay">
+        
+        <div id="premiumStatusDisplay" style="display: flex; justify-content: space-between; align-items: center;">
             <div class="section-title">👤 Account Status</div>
-            <div id="premiumStatus" style="margin-top: 10px; font-weight: bold; color: #2e7d32; font-size: 14px;"></div>
+            
+            <button id="toggleManagement" class="btn-secondary" style="width: auto; padding: 4px 8px; font-size: 11px; margin: 0; display: none;">
+                ⚙️ Manage
+            </button>
         </div>
         
+        <div id="premiumStatus" style="margin-top: 5px; font-weight: bold; color: #2e7d32; font-size: 14px;"></div>
+        
         <div id="licenseManagementArea">
-            <div class="section-title">Email & Trial</div>
+            <div class="section-title" style="margin-top: 15px;">Email & Trial Details</div>
     
             <input type="email" id="userEmailInput" placeholder="Enter your email (for license)…" />
             <button class="btn-secondary" id="saveEmailBtn">💾 Save Email</button>
@@ -162,7 +170,8 @@
             <div id="premiumCTA" style="margin-top: 10px;">
             </div>
         </div>
-    </div>  
+    </div>    
+    
     <!-- 🔑 API -->
     <div class="section">
         <select id="modelSelect">
@@ -235,42 +244,61 @@
         <div id="editStatus" class="status"></div>
     </div>
 <script>
-    /*************************************************************
-     * Office Initialization
-     *************************************************************/
-    let isPremiumActive = false; // 全局变量，用于标记付费状态
-
+    // ===================================
+    // Office Initialization (替换此函数)
+    // ===================================
+    let isPremiumActive = false; 
+    
     Office.onReady(() => {
         console.log("Office ready.");
-
+    
         // 按钮绑定
         document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
         document.getElementById("generateBtn").addEventListener("click", generateContent);
-
+        
+        // ⭐ 新增：折叠按钮事件
+        document.getElementById("toggleManagement").addEventListener("click", toggleLicenseManagement);
+    
         document.getElementById("modelSelect").addEventListener("change", () => {
             updateApiKeyLabel();
             updateGetKeyLink();
         });
-
+    
         // Preset edit buttons
         document.querySelectorAll("[data-action]").forEach(btn => {
             btn.addEventListener("click", () => editPreset(btn.dataset.action));
         });
-
+    
         // Custom instruction button
         document.getElementById("runCustomBtn").addEventListener("click", runCustom);
-
+    
         // Email / Trial / License init
         document.getElementById("saveEmailBtn").addEventListener("click", saveUserEmail);
-
+    
         // 初始化和许可证检查
         initUserEmailAndTrial();
         updateApiKeyLabel();
         updateGetKeyLink();
         
-        // ⭐ 启动时立即检查许可证
+        // 启动时立即检查许可证
         checkLicenseAndUpdateUI(); 
     });
+    
+    // ===================================
+    // New Function: 切换管理区的显示状态 (新增此函数)
+    // ===================================
+    function toggleLicenseManagement() {
+        const manageEl = document.getElementById("licenseManagementArea");
+        const toggleBtn = document.getElementById("toggleManagement");
+    
+        if (manageEl.classList.contains('collapsed')) {
+            manageEl.classList.remove('collapsed');
+            toggleBtn.textContent = '⚙️ Close';
+        } else {
+            manageEl.classList.add('collapsed');
+            toggleBtn.textContent = '⚙️ Manage';
+        }
+    }
 
     /*************************************************************
      * Step 1 — Email + Trial + Lemon Squeezy Purchase
@@ -739,19 +767,21 @@ ${selection.text.trim()}
         }
     }
 
-    // =================================
-    // 🔓 Update UI based on license
-    // =================================
+    // ===================================
+    // 🔓 Update UI based on license (替换此函数)
+    // ===================================
     async function checkLicenseAndUpdateUI() {
         const email = localStorage.getItem("byok_user_email");
         const statusEl = document.getElementById("premiumStatus");
-        const manageEl = document.getElementById("licenseManagementArea"); // 新增：许可证管理区
-        const ctaEl = document.getElementById("premiumCTA");
+        const manageEl = document.getElementById("licenseManagementArea");
+        const toggleBtn = document.getElementById("toggleManagement");
     
         if (!email) {
             console.log("No email saved yet, skip license check.");
-            // 如果没有 email，确保显示管理区
-            if (manageEl) manageEl.style.display = 'block';
+            
+            // 未保存邮箱时：显示管理区，隐藏折叠按钮
+            if (manageEl) manageEl.classList.remove('collapsed'); 
+            if (toggleBtn) toggleBtn.style.display = 'none';
             if (statusEl) statusEl.textContent = "🔒 Please enter your email";
             return;
         }
@@ -766,10 +796,11 @@ ${selection.text.trim()}
             // 1. 显示激活状态
             if (statusEl) statusEl.textContent = "🔥 Premium activated (Lifetime)";
             
-            // 2. 隐藏输入、试用和购买区
-            if (manageEl) manageEl.style.display = 'none'; 
+            // 2. 隐藏管理区，显示折叠按钮（默认折叠）
+            if (manageEl) manageEl.classList.add('collapsed'); 
+            if (toggleBtn) toggleBtn.style.display = 'inline-block';
+            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; // 重置按钮文本
             
-            // 重新运行试用状态（虽然它现在会被 isPremiumActive 阻止）
             updateTrialStatus();
             
         } else {
@@ -779,8 +810,9 @@ ${selection.text.trim()}
             // 1. 显示未激活/试用状态
             if (statusEl) statusEl.textContent = "🔒 Free trial / Upgrade required";
             
-            // 2. 显示输入、试用和购买区
-            if (manageEl) manageEl.style.display = 'block'; 
+            // 2. 显示管理区，隐藏折叠按钮
+            if (manageEl) manageEl.classList.remove('collapsed'); 
+            if (toggleBtn) toggleBtn.style.display = 'none';
             
             updateTrialStatus();
         }
