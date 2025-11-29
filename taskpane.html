@@ -175,26 +175,35 @@
     
     <!-- 🔑 API -->
     <div class="section">
-        <select id="modelSelect">
-            <option value="gemini">Google Gemini (Free)</option>
-            <option value="openai">OpenAI GPT-4</option>
-            <option value="claude">Anthropic Claude</option>
-        </select>
-
-        <div class="section-title">
-            🔑 <span id="apiKeyLabel">Gemini API Key</span>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="section-title">🔑 AI Model & Key</div>
+            
+            <button id="toggleApiKeyManagement" class="btn-secondary" style="width: auto; padding: 4px 8px; font-size: 11px; margin: 0; display: none;">
+                ⚙️ Manage
+            </button>
         </div>
-
-        <input type="password" id="apiKeyInput" placeholder="Enter your API key..." />
-        <button class="btn-secondary" id="saveApiKeyBtn">💾 Save Key</button>
-
-        <a class="link" id="getKeyLink" href="https://aistudio.google.com/app/apikey" target="_blank">
-            👉 Get free Gemini API Key
-        </a>
-
-        <div id="saveStatus" class="status"></div>
+        
+        <div id="apiKeySavedStatus" style="margin-top: 5px; font-weight: bold; color: #333; font-size: 14px;"></div>
+    
+        <div id="apiKeyManagementArea">
+            <label for="modelSelect">Select AI Model:</label>
+            <select id="modelSelect">
+                <option value="gemini">Google Gemini 2.0 Flash</option>
+                <option value="openai">OpenAI GPT-4o</option>
+                <option value="claude">Anthropic Claude 3.5 Sonnet</option>
+            </select>
+            
+            <label for="apiKeyInput" id="apiKeyLabel"></label>
+            <input type="password" id="apiKeyInput" placeholder="Paste your API key here…" />
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <a href="#" target="_blank" id="getKeyLink" class="link" style="margin-top: 0;"></a>
+                <button class="btn-primary" id="saveApiKeyBtn" style="margin-top: 0;">💾 Save Key</button>
+            </div>
+            
+            <div class="status" id="saveStatus" style="margin-top: 10px;"></div>
+        </div>
     </div>
-
     <!-- ✨ Generate -->
     <div class="section">
         <div class="section-title">✨ Generate Content</div>
@@ -245,53 +254,75 @@
         <div id="editStatus" class="status"></div>
     </div>
 <script>
-    // ===================================
-    // Office Initialization (替换此函数)
-    // ===================================
-    let isPremiumActive = false; 
-    
+    /*************************************************************
+     * Office Initialization
+     *************************************************************/
+    let isPremiumActive = false; // 全局变量，用于标记付费状态
+
     Office.onReady(() => {
         console.log("Office ready.");
-    
+
         // 按钮绑定
         document.getElementById("saveApiKeyBtn").addEventListener("click", saveApiKey);
         document.getElementById("generateBtn").addEventListener("click", generateContent);
         
-        // ⭐ 新增：折叠按钮事件
+        // ⭐ NEW: API Key 折叠按钮事件
+        document.getElementById("toggleApiKeyManagement").addEventListener("click", toggleApiKeyManagement);
+        // Email 折叠按钮事件
         document.getElementById("toggleManagement").addEventListener("click", toggleLicenseManagement);
-    
+
         document.getElementById("modelSelect").addEventListener("change", () => {
             updateApiKeyLabel();
             updateGetKeyLink();
+            updateApiKeyUI(); // ⭐ NEW: 模型切换后立即更新 API UI
         });
-    
+
         // Preset edit buttons
         document.querySelectorAll("[data-action]").forEach(btn => {
             btn.addEventListener("click", () => editPreset(btn.dataset.action));
         });
-    
+
         // Custom instruction button
         document.getElementById("runCustomBtn").addEventListener("click", runCustom);
-    
+
         // Email / Trial / License init
         document.getElementById("saveEmailBtn").addEventListener("click", saveUserEmail);
-    
+
         // 初始化和许可证检查
         initUserEmailAndTrial();
         updateApiKeyLabel();
         updateGetKeyLink();
+        
+        // ⭐ NEW: 启动时检查 API key 状态并折叠
+        updateApiKeyUI();
         
         // 启动时立即检查许可证
         checkLicenseAndUpdateUI(); 
     });
     
     // ===================================
-    // New Function: 切换管理区的显示状态 (新增此函数)
+    // New Function: 切换 API 管理区的显示状态
+    // ===================================
+    function toggleApiKeyManagement() {
+        const manageEl = document.getElementById("apiKeyManagementArea");
+        const toggleBtn = document.getElementById("toggleApiKeyManagement");
+
+        if (manageEl.classList.contains('collapsed')) {
+            manageEl.classList.remove('collapsed');
+            toggleBtn.textContent = '⚙️ Close';
+        } else {
+            manageEl.classList.add('collapsed');
+            toggleBtn.textContent = '⚙️ Manage';
+        }
+    }
+
+    // ===================================
+    // New Function: 切换 Email 管理区的显示状态
     // ===================================
     function toggleLicenseManagement() {
         const manageEl = document.getElementById("licenseManagementArea");
         const toggleBtn = document.getElementById("toggleManagement");
-    
+
         if (manageEl.classList.contains('collapsed')) {
             manageEl.classList.remove('collapsed');
             toggleBtn.textContent = '⚙️ Close';
@@ -366,7 +397,6 @@
         showStatus("saveStatus", "✅ Email saved", "success");
 
         updateTrialStatus();
-        // ⭐ 关键修复 2: 保存邮箱后，立即检查许可证状态
         checkLicenseAndUpdateUI(); 
     }
 
@@ -375,11 +405,15 @@
     }
 
     /*************************************************************
-     * Trial Status
+     * Trial Status (确保付费后隐藏试用信息)
      *************************************************************/
     function updateTrialStatus() {
-        // ⭐ 关键修复 3: 如果 isPremiumActive 为 true，则跳过试用状态的显示
+        // ⭐ NEW: 如果 isPremiumActive 为 true，则跳过试用状态的显示
         if (isPremiumActive) {
+            const el = document.getElementById("trialStatus");
+            const cta = document.getElementById("premiumCTA");
+            if (el) el.style.display = "none";
+            if (cta) cta.style.display = "none";
             return;
         }
 
@@ -400,11 +434,11 @@
 
             cta.style.display = "block";
             cta.innerHTML = `
-        ⭐ Enjoying your free trial?<br>
-        <button id="buyButton" class="btn-primary" style="margin-top:8px;">
-            🔒 Buy lifetime license – $19.90
-        </button>
-    `;
+                ⭐ Enjoying your free trial?<br>
+                <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+                    🔒 Buy lifetime license – $19.90
+                </button>
+            `;
         } else {
             // Trial ended
             el.className = "status error";
@@ -413,11 +447,11 @@
 
             cta.style.display = "block";
             cta.innerHTML = `
-        ⭐ Lifetime premium unlock available<br>
-        <button id="buyButton" class="btn-primary" style="margin-top:8px;">
-            🔒 Buy lifetime license – $19.90
-        </button>
-    `;
+                ⭐ Lifetime premium unlock available<br>
+                <button id="buyButton" class="btn-primary" style="margin-top:8px;">
+                    🔒 Buy lifetime license – $19.90
+                </button>
+            `;
         }
 
         // Bind purchase button
@@ -448,6 +482,32 @@
             endpoint: "https://api.anthropic.com/v1/messages"
         }
     };
+    
+    // ⭐ NEW: 根据 API Key 状态更新 UI (Key Management)
+    function updateApiKeyUI(modelOverride) {
+        const model = modelOverride || document.getElementById("modelSelect").value;
+        const apiKey = localStorage.getItem(`apiKey_${model}`);
+        const cfg = modelConfig[model];
+        
+        const statusEl = document.getElementById("apiKeySavedStatus");
+        const manageEl = document.getElementById("apiKeyManagementArea");
+        const toggleBtn = document.getElementById("toggleApiKeyManagement");
+        
+        if (apiKey) {
+            // Key is saved: Fold UI, show Manage button, update status
+            if (statusEl) statusEl.textContent = `🔑 ${cfg.name} Saved`;
+            if (manageEl) manageEl.classList.add('collapsed');
+            if (toggleBtn) toggleBtn.style.display = 'inline-block';
+            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; 
+            
+        } else {
+            // Key is NOT saved: Unfold UI, hide Manage button, prompt user
+            if (statusEl) statusEl.textContent = `⚠️ Please enter your ${cfg.name}`;
+            if (manageEl) manageEl.classList.remove('collapsed');
+            if (toggleBtn) toggleBtn.style.display = 'none';
+        }
+    }
+
 
     function updateApiKeyLabel() {
         const model = document.getElementById("modelSelect").value;
@@ -487,11 +547,15 @@
 
         localStorage.setItem(`apiKey_${model}`, key);
         showStatus("saveStatus", "API key saved! ✅", "success");
+        
+        // ⭐ NEW: 保存后折叠 UI
+        updateApiKeyUI(model); 
     }
 
     /*************************************************************
-     * Generate Content
+     * Generate Content (Rest of functions remain the same)
      *************************************************************/
+    // ... (generateContent, editPreset, translateSelected, runCustom, callAI, insertText, showStatus functions) ...
     async function generateContent() {
         const prompt = document.getElementById("promptInput").value.trim();
         if (!prompt) {
@@ -523,9 +587,6 @@
         }
     }
 
-    /*************************************************************
-     * Edit with preset prompts
-     *************************************************************/
     async function editPreset(action) {
         const model = document.getElementById("modelSelect").value;
         const apiKey = localStorage.getItem(`apiKey_${model}`);
@@ -568,9 +629,6 @@
         }
     }
 
-    /*************************************************************
-     * Translate Selected
-     *************************************************************/
     async function translateSelected() {
         const model = document.getElementById("modelSelect").value;
         const apiKey = localStorage.getItem(`apiKey_${model}`);
@@ -613,9 +671,6 @@ ${selection.text.trim()}
         }
     }
 
-    /*************************************************************
-     * Custom Instruction
-     *************************************************************/
     async function runCustom() {
         const instruction = document.getElementById("customInstruction").value.trim();
         if (!instruction) {
@@ -656,9 +711,6 @@ ${selection.text.trim()}
         }
     }
 
-    /*************************************************************
-     * AI API — Gemini 2.0 Flash / GPT-4o / Claude
-     *************************************************************/
     async function callAI(model, apiKey, prompt) {
         const cfg = modelConfig[model];
 
@@ -724,9 +776,6 @@ ${selection.text.trim()}
         throw new Error("Model not implemented.");
     }
 
-    /*************************************************************
-     * Insert text into Word
-     *************************************************************/
     async function insertText(text) {
         await Word.run(async (context) => {
             const selection = context.document.getSelection();
@@ -735,9 +784,6 @@ ${selection.text.trim()}
         });
     }
 
-    /*************************************************************
-     * Status helper
-     *************************************************************/
     function showStatus(id, msg, type) {
         const el = document.getElementById(id);
         el.textContent = msg;
@@ -750,16 +796,12 @@ ${selection.text.trim()}
     }
 
 
-    // Cloud Run License Check URL (从底部移动到顶部，以便在主 <script> 中定义和使用)
+    // Cloud Run License Check URL
     const CHECK_LICENSE_URL = "https://checklicense-h5obtbbyra-uc.a.run.app";
 
-    // =============================
-    // 🔍 Call backend license check
-    // =============================
     async function callCheckLicense(email) {
         try {
             const url = `${CHECK_LICENSE_URL}?email=${encodeURIComponent(email)}`;
-            // 🚨 注意：如果您使用了 Firebase Auth，这里可能还需要添加认证头，但目前只依赖于公网请求
             const res = await fetch(url);
             return await res.json();
         } catch (err) {
@@ -768,28 +810,27 @@ ${selection.text.trim()}
         }
     }
 
-    // ===================================
-    // 🔓 Update UI based on license (替换此函数)
-    // ===================================
+    // =================================
+    // 🔓 Update UI based on license
+    // =================================
     async function checkLicenseAndUpdateUI() {
         const email = localStorage.getItem("byok_user_email");
         const statusEl = document.getElementById("premiumStatus");
         const manageEl = document.getElementById("licenseManagementArea");
         const toggleBtn = document.getElementById("toggleManagement");
-    
+
         if (!email) {
             console.log("No email saved yet, skip license check.");
-            
             // 未保存邮箱时：显示管理区，隐藏折叠按钮
             if (manageEl) manageEl.classList.remove('collapsed'); 
             if (toggleBtn) toggleBtn.style.display = 'none';
             if (statusEl) statusEl.textContent = "🔒 Please enter your email";
             return;
         }
-    
+
         const result = await callCheckLicense(email);
         console.log("🔍 License result:", result);
-    
+
         if (result.active === true) {
             // Premium 已激活
             isPremiumActive = true; 
@@ -800,8 +841,9 @@ ${selection.text.trim()}
             // 2. 隐藏管理区，显示折叠按钮（默认折叠）
             if (manageEl) manageEl.classList.add('collapsed'); 
             if (toggleBtn) toggleBtn.style.display = 'inline-block';
-            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; // 重置按钮文本
+            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; 
             
+            // 3. 隐藏试用状态/CTA（由 updateTrialStatus 确保）
             updateTrialStatus();
             
         } else {
