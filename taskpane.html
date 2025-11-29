@@ -408,58 +408,51 @@
      * Trial Status (确保付费后隐藏试用信息)
      *************************************************************/
     function updateTrialStatus() {
-        // ⭐ NEW: 如果 isPremiumActive 为 true，则跳过试用状态的显示
+        const trialEl = document.getElementById("trialStatus");
+        const ctaEl = document.getElementById("premiumCTA");
+    
         if (isPremiumActive) {
-            const el = document.getElementById("trialStatus");
-            const cta = document.getElementById("premiumCTA");
-            if (el) el.style.display = "none";
-            if (cta) cta.style.display = "none";
+            trialEl.style.display = "none";
+            ctaEl.style.display = "none";
             return;
         }
-
-        const el = document.getElementById("trialStatus");
-        const cta = document.getElementById("premiumCTA");
-
+    
         const start = Number(localStorage.getItem("byok_trial_start") || Date.now());
         const now = Date.now();
-
         const daysUsed = Math.floor((now - start) / (24 * 3600 * 1000));
         const daysLeft = TRIAL_DAYS - daysUsed;
-
+    
         if (daysLeft > 0) {
-            // Trial active
-            el.className = "status success";
-            el.style.display = "block";
-            el.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
-
-            cta.style.display = "block";
-            cta.innerHTML = `
-                ⭐ Enjoying your free trial?<br>
+            trialEl.className = "status success";
+            trialEl.textContent = `🟢 Free trial: ${daysLeft} day(s) remaining`;
+            trialEl.style.display = "block";
+    
+            ctaEl.style.display = "block";
+            ctaEl.innerHTML = `
+                ⭐ Enjoying it?<br>
                 <button id="buyButton" class="btn-primary" style="margin-top:8px;">
                     🔒 Buy lifetime license – $19.90
-                </button>
-            `;
+                </button>`;
         } else {
-            // Trial ended
-            el.className = "status error";
-            el.style.display = "block";
-            el.textContent = "🔴 Free trial ended — upgrade required";
-
-            cta.style.display = "block";
-            cta.innerHTML = `
-                ⭐ Lifetime premium unlock available<br>
+            trialEl.className = "status error";
+            trialEl.textContent = "🔴 Free trial ended — upgrade required";
+            trialEl.style.display = "block";
+    
+            ctaEl.style.display = "block";
+            ctaEl.innerHTML = `
+                ⭐ Lifetime access available<br>
                 <button id="buyButton" class="btn-primary" style="margin-top:8px;">
                     🔒 Buy lifetime license – $19.90
-                </button>
-            `;
+                </button>`;
         }
-
-        // Bind purchase button
+    
+        // 绑定购买按钮
         setTimeout(() => {
             const btn = document.getElementById("buyButton");
             if (btn) btn.addEventListener("click", openLsCheckout);
         }, 0);
     }
+
 
     /*************************************************************
      * Model Config — Gemini 2.0 Flash
@@ -484,27 +477,26 @@
     };
     
     // ⭐ NEW: 根据 API Key 状态更新 UI (Key Management)
-    function updateApiKeyUI(modelOverride) {
-        const model = modelOverride || document.getElementById("modelSelect").value;
+    function updateApiKeyUI() {
+        const model = document.getElementById("modelSelect").value;
         const apiKey = localStorage.getItem(`apiKey_${model}`);
         const cfg = modelConfig[model];
-        
+    
         const statusEl = document.getElementById("apiKeySavedStatus");
         const manageEl = document.getElementById("apiKeyManagementArea");
         const toggleBtn = document.getElementById("toggleApiKeyManagement");
-        
+    
         if (apiKey) {
-            // Key is saved: Fold UI, show Manage button, update status
-            if (statusEl) statusEl.textContent = `🔑 ${cfg.name} Saved`;
-            if (manageEl) manageEl.classList.add('collapsed');
-            if (toggleBtn) toggleBtn.style.display = 'inline-block';
-            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; 
-            
+            // 已保存 API key → 折叠管理界面
+            statusEl.textContent = `🔑 ${cfg.name} Saved`;
+            manageEl.classList.add("collapsed");
+            toggleBtn.style.display = "inline-block";
+            toggleBtn.textContent = "⚙️ Manage";
         } else {
-            // Key is NOT saved: Unfold UI, hide Manage button, prompt user
-            if (statusEl) statusEl.textContent = `⚠️ Please enter your ${cfg.name}`;
-            if (manageEl) manageEl.classList.remove('collapsed');
-            if (toggleBtn) toggleBtn.style.display = 'none';
+            // 未保存 → 展开管理界面
+            statusEl.textContent = `⚠️ Please enter your ${cfg.name}`;
+            manageEl.classList.remove("collapsed");
+            toggleBtn.style.display = "none";
         }
     }
 
@@ -816,47 +808,54 @@ ${selection.text.trim()}
     async function checkLicenseAndUpdateUI() {
         const email = localStorage.getItem("byok_user_email");
         const statusEl = document.getElementById("premiumStatus");
-        const manageEl = document.getElementById("licenseManagementArea");
+        const trialEl = document.getElementById("trialStatus");
+        const ctaEl = document.getElementById("premiumCTA");
+        const manageArea = document.getElementById("licenseManagementArea");
         const toggleBtn = document.getElementById("toggleManagement");
-
+    
         if (!email) {
-            console.log("No email saved yet, skip license check.");
-            // 未保存邮箱时：显示管理区，隐藏折叠按钮
-            if (manageEl) manageEl.classList.remove('collapsed'); 
-            if (toggleBtn) toggleBtn.style.display = 'none';
+            // 未保存邮箱 → 展开设置区
             if (statusEl) statusEl.textContent = "🔒 Please enter your email";
+            manageArea.classList.remove("collapsed");
+            toggleBtn.style.display = "none";
+            isPremiumActive = false;
             return;
         }
-
+    
         const result = await callCheckLicense(email);
         console.log("🔍 License result:", result);
-
+    
         if (result.active === true) {
-            // Premium 已激活
-            isPremiumActive = true; 
-            
-            // 1. 显示激活状态
-            if (statusEl) statusEl.textContent = "🔥 Premium activated (Lifetime)";
-            
-            // 2. 隐藏管理区，显示折叠按钮（默认折叠）
-            if (manageEl) manageEl.classList.add('collapsed'); 
-            if (toggleBtn) toggleBtn.style.display = 'inline-block';
-            if (toggleBtn) toggleBtn.textContent = '⚙️ Manage'; 
-            
-            // 3. 隐藏试用状态/CTA（由 updateTrialStatus 确保）
-            updateTrialStatus();
-            
+            // ============ PREMIUM 激活 =============
+    
+            isPremiumActive = true;
+    
+            // 顶部状态
+            statusEl.textContent = "🔥 Premium activated (Lifetime)";
+            statusEl.style.color = "#2e7d32";
+    
+            // 隐藏试用 UI
+            trialEl.style.display = "none";
+            ctaEl.style.display = "none";
+    
+            // 折叠设置区 + 显示 Manage 按钮
+            manageArea.classList.add("collapsed");
+            toggleBtn.style.display = "inline-block";
+            toggleBtn.textContent = "⚙️ Manage";
+    
         } else {
-            // 未激活或试用中
-            isPremiumActive = false; 
-            
-            // 1. 显示未激活/试用状态
-            if (statusEl) statusEl.textContent = "🔒 Free trial / Upgrade required";
-            
-            // 2. 显示管理区，隐藏折叠按钮
-            if (manageEl) manageEl.classList.remove('collapsed'); 
-            if (toggleBtn) toggleBtn.style.display = 'none';
-            
+            // ============ Free Trial / 未激活 =============
+    
+            isPremiumActive = false;
+    
+            // 顶部状态
+            statusEl.textContent = "🔒 Free trial / Upgrade required";
+            statusEl.style.color = "#c62828";
+    
+            // 展开设置区 + 隐藏 Manage（因为不激活不能折叠）
+            manageArea.classList.remove("collapsed");
+            toggleBtn.style.display = "none";
+    
             updateTrialStatus();
         }
     }
