@@ -10,7 +10,7 @@
   <ProviderName>RootBro</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
 
-  <DisplayName DefaultValue="AI-Draft: BYOK AI Assistant"/>
+  <DisplayName DefaultValue="AI-Draft: AI Assistant"/>
   <Description DefaultValue="A clean, fast BYOK AI assistant for Word. No subscription, lifetime use." />
 
   <!-- Icons still hosted on GitHub -->
@@ -103,7 +103,7 @@
 
       <bt:ShortStrings>
         <bt:String id="CommandsGroup.Label" DefaultValue="AI-Draft"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="AI-Draft"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="AI-tool"/>
         <bt:String id="GetStarted.Title" DefaultValue="AI-Draft Installed"/>
       </bt:ShortStrings>
 
