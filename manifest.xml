@@ -15,7 +15,7 @@
   <Description DefaultValue="A clean, fast BYOK AI assistant for Word. No subscription, lifetime use." />
 
   <IconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-80.png"/>
+  <HighResolutionIconUrl DefaultValue="https://drrootbro.github.io/word-ai-assistant/assets/icon-64.png"/>
 
   <SupportUrl DefaultValue="https://rootbro.com/ai-draft/support.html"/>
 
